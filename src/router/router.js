@@ -9,14 +9,24 @@ const routes = [
         component: () => import('../views/Home.vue')
     },
     {
-        path: '/about',
-        name: 'About',
-        component: () => import('../views/About.vue')
+        path: '/createItem',
+        name: 'CreateItem',
+        component: () => import('../views/CreateItemView.vue')
     },
     {
-        path: '/contact',
+        path: '/shoppingList',
         name: 'Contact',
         component: () => import('../views/Contact.vue')
+    },
+    {
+        path: '/detail',
+        name: 'Detail',
+        component: () => import('../views/Detail.vue')
+    },
+    {
+        path: '/updateItem',
+        name: 'UpdateItem',
+        component: () => import('../views/UpdateItem.vue')
     },
     {
         path: '/:pathMatch(.*)*',

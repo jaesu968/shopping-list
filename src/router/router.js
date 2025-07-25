@@ -1,39 +1,34 @@
 // The router file is used to define the routes for the application.
 // and manage the navigation between the pages or views in a single-page application (SPA).
+import ShoppingList from '../views/ShoppingList.vue';
 import { createRouter, createWebHistory } from 'vue-router'; 
+import CreateItem from '../views/CreateItem.vue'; 
+import UpdateItem from '../views/UpdateItem.vue';
+import Detail from '../views/DetailView.vue';
+
 
 const routes = [
     {
         path: '/',
-        name: 'Home',
-        component: () => import('../views/Home.vue')
+        name: 'ShoppingList',
+        component: ShoppingList
     },
     {
-        path: '/createItem',
+        path: '/create',
         name: 'CreateItem',
-        component: () => import('../views/CreateItemView.vue')
+        component: CreateItem 
     },
     {
-        path: '/shoppingList',
-        name: 'Contact',
-        component: () => import('../views/Contact.vue')
-    },
-    {
-        path: '/detail',
-        name: 'Detail',
-        component: () => import('../views/Detail.vue')
-    },
-    {
-        path: '/updateItem',
+        path: '/update/:id',
         name: 'UpdateItem',
-        component: () => import('../views/UpdateItem.vue')
+        component: UpdateItem
     },
     {
-        path: '/:pathMatch(.*)*',
-        name: 'NotFound',
-        component: () => import('../views/NotFound.vue')
-    }
-]
+        path: '/detail/:id',
+        name: 'Detail',
+        component: DetailView,
+    },
+]; 
 
 const router = createRouter({
     history: createWebHistory(),

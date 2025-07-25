@@ -1,6 +1,10 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
+import CreateItem from './views/CreateItem.vue'
+import DetailView from './views/DetailView.vue'
+import ShoppingList from './views/ShoppingListView.vue'
+import UpdateItem from './views/UpdateItem.vue'
 </script>
 
 <template>
@@ -13,7 +17,7 @@ import TheWelcome from './components/TheWelcome.vue'
   </header>
 
   <main>
-    <TheWelcome />
+    <router-view />
   </main>
 </template>
 

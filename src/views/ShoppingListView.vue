@@ -34,9 +34,26 @@
           <h3>Items in {{ lists[selectedList].name }}</h3>
           <ItemForm :listName="lists[selectedList].name" @submit="addItemToList" @cancel="selectedList = null" />
           <ul>
-            <li v-for="(item, i) in lists[selectedList].items" :key="i">
-              {{ item }}
-              <button @click="removeItemFromList(i)">Remove</button>
+            <li v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
+              <div class="item-content">
+                <!-- Show text when not updating -->
+                <span v-if="updatingItem !== i" class="item-text">{{ item  }}</span>
+                <!-- Show input when updating -->
+                 <input v-else 
+                 v-model="updateText"
+                 @keyup.enter="saveUpdate(i)"
+                 @keyup.esc="cancelUpdate"
+                 class="update-input"
+                 >
+              </div>
+              <div class="item-actions">
+                <!-- Update Button (only show when not editing)-->
+                <button v-if="updatingItem !== i" @click="startUpdate(i, item)" class="update-btn">Update</button>
+                <!-- Save/Cancel buttons (only show when editing) -->
+                <button v-else @click="saveUpdate(i)" class="save-btn">Save</button>
+                <button v-else @click="cancelUpdate" class="cancel-btn">Cancel</button>
+                <button @click="removeItemFromList(i)" class="remove-btn">Remove</button>
+              </div>
             </li>
           </ul>
         </div>
@@ -79,6 +96,29 @@ const renameList = (index) => {
 
 const addItemToList = (item) => { // Add item to the currently selected list
   lists.value[selectedList.value].items.push(item)
+}
+
+// updating an item 
+const updatingItem = ref(null) // no item to edit yet
+const updateText = ref('') // the text for editing 
+
+// function to start updating an item 
+const startUpdate = (itemIndex, currentText) => {
+  updatingItem.value = itemIndex; 
+  updateText.value = currentText; 
+}
+// saving an edit or update to an item 
+const saveUpdate = (itemIndex) => {
+  if (updateText.value.trim()) {
+    lists.value[selectedList.value].items[itemIndex] = updateText.value.trim()
+  }
+  updatingItem.value = null 
+  updateText.value = ''
+}
+// canceling update to an item 
+const cancelUpdate = () => {
+  updatingItem.value = null
+  updateText.value = ''
 }
 
 const removeItemFromList = (itemIndex) => {
@@ -165,4 +205,58 @@ button {
    from the parent app, making the text black and visible*/
   font-weight: bold; 
 }
+
+/*Item display styling */ 
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.item-content {
+  flex: 1;
+}
+
+.item-text {
+  font-size: 14px;
+  color: #333;
+}
+
+.item-actions {
+  margin-left: 10px;
+}
+
+.remove-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  background: #ff3742;
+}
+
+/* Styling for the update buttons */
+.update-input {
+  width: 100%; 
+  padding: 4px 8px; 
+  border: 1px solid #42b883; 
+  border-radius: 3px; 
+}
+
+.update-btn {
+  background: #42b883; 
+  color: white; 
+  margin-right: 5px; 
+}
+
 </style>

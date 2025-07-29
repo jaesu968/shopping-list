@@ -31,7 +31,7 @@ const routes = [
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
-        component: () => import('../views/Notfound.vue') // Lazy loading the NotFound component
+        component: () => import('../views/NotFound.vue') // Lazy loading the NotFound component
     }
 
 ];

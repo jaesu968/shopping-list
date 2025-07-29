@@ -1,8 +1,8 @@
 // The router file is used to define the routes for the application.
 // and manage the navigation between the pages or views in a single-page application (SPA).
 import ShoppingList from '../views/ShoppingListView.vue';
-import { createRouter, createWebHistory } from 'vue-router'; 
-import CreateItem from '../views/CreateItem.vue'; 
+import { createRouter, createWebHistory } from 'vue-router';
+import CreateItem from '../components/ItemForm.vue';
 import UpdateItem from '../views/UpdateItem.vue';
 import DetailView from '../views/DetailView.vue';
 
@@ -16,7 +16,7 @@ const routes = [
     {
         path: '/create',
         name: 'CreateItem',
-        component: CreateItem 
+        component: CreateItem
     },
     {
         path: '/update/:id',
@@ -31,10 +31,10 @@ const routes = [
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
-        component: () => import('../views/NotFound.vue') // Lazy loading the NotFound component
+        component: () => import('../views/Notfound.vue') // Lazy loading the NotFound component
     }
 
-]; 
+];
 
 const router = createRouter({
     history: createWebHistory(),

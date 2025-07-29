@@ -152,4 +152,11 @@ li {
 button {
   margin-left: 0.5rem;
 }
+
+/* Make "Items in List" heading visible in dark mode */ 
+.item-pane h3 {
+  color: #000 !important; /* !important overrides any inherited dark mode colors 
+   from the parent app, making the text black and visible*/
+  font-weight: bold; 
+}
 </style>

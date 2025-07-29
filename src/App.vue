@@ -1,51 +1,80 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-import CreateItem from './views/CreateItem.vue'
-import DetailView from './views/DetailView.vue'
-import ShoppingList from './views/ShoppingListView.vue'
-import UpdateItem from './views/UpdateItem.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+  <div :class="`app-container ${isDark ? 'dark' : 'light'}`">
+    <div class="app-wrapper">
+      <header>
+        <h1>Shopping List App</h1>
+        <button @click="toggleMode">
+          {{ isDark ? '☀️ Light Mode' : '🌙 Dark Mode' }}
+        </button>
+      </header>
+      <router-view />
     </div>
-  </header>
-
-  <main>
-    <router-view />
-  </main>
+  </div>
 </template>
 
+<script setup>
+import { ref, onMounted, watch } from 'vue'
+
+const isDark = ref(true)
+
+const toggleMode = () => {
+  isDark.value = !isDark.value
+}
+
+onMounted(() => {
+  document.body.className = isDark.value ? 'dark' : 'light'
+})
+
+watch(isDark, (newVal) => {
+  document.body.className = newVal ? 'dark' : 'light'
+})
+</script>
+
 <style scoped>
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: var(--outer-bg);
+  padding: 2rem;
+}
+
+.app-wrapper {
+  width: 100%;
+  max-width: 1000px;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+}
+
 header {
-  line-height: 1.5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+button {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
+/* Theme Variables */
+.dark {
+  --outer-bg: #121212;
+  --card-bg: #1e1e1e;
+  --text-color: #ffffff;
+}
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.light {
+  --outer-bg: #eeeeee;
+  --card-bg: #ffffff;
+  --text-color: #222222;
 }
 </style>

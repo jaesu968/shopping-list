@@ -1,14 +1,20 @@
+<!-- This is the Shopping List View-->
 <template>
   <Card>
     <template #left>
+      <div class="template-left">
+      <router-link to="/" class="home-btn">
+          🏠 Home
+        </router-link>
       <ShoppingItem @add-list="addList" />
+      </div>
     </template>
 
-    <template #right>
+    <template #right> <!-- Empty state when no lists exist -->
       <div v-if="lists.length === 0">
         <p>No lists yet. Create one on the left.</p>
       </div>
-      <div v-else>
+      <div v-else> <!-- Display all shopping lists-->
         <ul>
           <li v-for="(list, index) in lists" :key="list.id">
             <strong>{{ list.name }}</strong>
@@ -18,7 +24,7 @@
           </li>
         </ul>
 
-        <div v-if="selectedList !== null" class="item-pane">
+        <div v-if="selectedList !== null" class="item-pane"> <!-- Selected list detail view-->
           <h3>Items in {{ lists[selectedList].name }}</h3>
           <ItemForm :listName="lists[selectedList].name" @submit="addItemToList" @cancel="selectedList = null" />
           <ul>
@@ -31,6 +37,7 @@
       </div>
     </template>
   </Card>
+  <footer class="page-footer">&copy; 2025 Shopping List App - CIS 385</footer>
 </template>
 
 <script setup>
@@ -39,10 +46,10 @@ import Card from '../components/Card.vue'
 import ShoppingItem from '../components/ShoppingItem.vue'
 import ItemForm from '../components/ItemForm.vue'
 
-const lists = ref([])
-const selectedList = ref(null)
+const lists = ref([]) // Reactive data: array of shopping lists
+const selectedList = ref(null) // Currently selected list index (null if none selected)
 
-const addList = (name) => {
+const addList = (name) => { // Add new shopping list with unique ID 
   lists.value.push({
     id: Date.now(),
     name,
@@ -50,7 +57,7 @@ const addList = (name) => {
   })
 }
 
-const deleteList = (index) => {
+const deleteList = (index) => { // Delete a shopping list with unique ID (index)
   if (confirm('Delete this list?')) {
     if (selectedList.value === index) selectedList.value = null
     lists.value.splice(index, 1)
@@ -64,7 +71,7 @@ const renameList = (index) => {
   }
 }
 
-const addItemToList = (item) => {
+const addItemToList = (item) => { // Add item to the currently selected list
   lists.value[selectedList.value].items.push(item)
 }
 
@@ -74,6 +81,30 @@ const removeItemFromList = (itemIndex) => {
 </script>
 
 <style scoped>
+/* LAYOUT CONTAINERS */
+.template-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-pane {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+/* center footer */ 
+.page-footer {
+  text-align: center; 
+  padding: 20px; 
+  margin-top: auto; 
+  font-size: 14px; 
+  color: #666; 
+  border-top: 1px solid #eee; /* visible top border to show footer area */
+}
+
+/* LIST STYLING */
 ul {
   list-style: none;
   padding: 0;
@@ -87,14 +118,38 @@ li {
   border-radius: 4px;
 }
 
-button {
-  margin-left: 0.5rem;
+/* BUTTONS  */
+/* Unified button styling for left panel */
+.template-left button,
+.template-left .home-btn,
+.template-left a {
+  width: 100%;
+  height: 40px;
+  padding: 8px 16px;
+  margin: 0 0 10px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
-.item-pane {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f0f0f0;
-  border-radius: 8px;
+/* Home button colors */
+.home-btn {
+  background: #42b883;
+  color: white;
+}
+
+.home-btn:hover {
+  background: #369870;
+}
+
+/* Other buttons */
+button {
+  margin-left: 0.5rem;
 }
 </style>

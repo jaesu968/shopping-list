@@ -18,7 +18,13 @@
         <ul>
           <li v-for="(list, index) in lists" :key="list.id">
             <strong>{{ list.name }}</strong>
-            <button @click="selectedList = index">View</button>
+            <!-- click and toggle logic to display a list and hide it-->
+            <!-- If a list is currently selected Hide will show -->
+            <!-- If the list is not currently selected View will show-->
+            <button @click="selectedList = selectedList === index ? null : index">
+              {{  selectedList === index ? "Hide" : 'View' }}
+            </button>
+            <!-- Renaming and deleting lists-->
             <button @click="renameList(index)">Rename</button>
             <button @click="deleteList(index)">Delete</button>
           </li>

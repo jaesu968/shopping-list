@@ -51,7 +51,7 @@
             @submit="addItemToList" 
             @cancel="selectedList = null" 
           />
-          
+          <!-- replacing this section with a table format 
           <ul>
             <li v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
               <div class="item-content">
@@ -63,6 +63,24 @@
               </div>
             </li>
           </ul>
+         --> 
+          <table class="items-table"> 
+            <thead> 
+              <tr> 
+                <th class="item-header">Item Name</th>
+                <th class="actions-header">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
+                <td class="item-cell">{{ item }}</td>
+                <td class="actions-cell">
+                  <button @click="startUpdate(i)" class="update-btn">Update</button>
+                  <button @click="removeItemFromList(i)" class="remove-btn">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </template>
@@ -212,7 +230,6 @@ button {
 
 /*Item display styling */ 
 .item-row {
-  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
@@ -222,18 +239,19 @@ button {
   margin-bottom: 8px;
 }
 
-.item-content {
+/* .item-content {
   flex: 1;
 }
+  */
 
 .item-text {
   font-size: 14px;
   color: #333;
 }
 
-.item-actions {
+/* .item-actions {
   margin-left: 10px;
-}
+} */ 
 
 .remove-btn {
   background: #ff4757;
@@ -255,6 +273,46 @@ button {
   background: #42b883; 
   color: white; 
   margin-right: 5px; 
+}
+
+/* Table styling */
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+}
+
+.items-table th {
+  background-color: #f5f5f5;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+  font-weight: bold;
+  color: #333;
+}
+
+.items-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.item-cell {
+  font-size: 14px;
+  color: #333;
+}
+
+.actions-cell {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.items-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.items-table tr:nth-child(even) {
+  background-color: #fdfdfd;
 }
 
 </style>

@@ -32,26 +32,33 @@
 
         <div v-if="selectedList !== null" class="item-pane"> <!-- Selected list detail view-->
           <h3>Items in {{ lists[selectedList].name }}</h3>
-          <ItemForm :listName="lists[selectedList].name" @submit="addItemToList" @cancel="selectedList = null" />
+          
+          <!-- Show UpdateForm when editing an item -->
+          <UpdateForm 
+            v-if="updatingItem !== null"
+            title="Update Item"
+            placeholder="Enter new item text..."
+            submit-text="Save Item"
+            :initial-value="lists[selectedList].items[updatingItem]"
+            @update="(newValue) => saveUpdate(updatingItem, newValue)"
+            @cancel="cancelUpdate"
+          />
+          
+          <!-- Show Add Item form when not editing -->
+          <ItemForm 
+            v-else
+            :listName="lists[selectedList].name" 
+            @submit="addItemToList" 
+            @cancel="selectedList = null" 
+          />
+          
           <ul>
             <li v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
               <div class="item-content">
-                <!-- Show text when not updating -->
-                <span v-if="updatingItem !== i" class="item-text">{{ item  }}</span>
-                <!-- Show input when updating -->
-                 <input v-else 
-                 v-model="updateText"
-                 @keyup.enter="saveUpdate(i)"
-                 @keyup.esc="cancelUpdate"
-                 class="update-input"
-                 >
+                <span class="item-text">{{ item }}</span>
               </div>
               <div class="item-actions">
-                <!-- Update Button (only show when not editing)-->
-                <button v-if="updatingItem !== i" @click="startUpdate(i, item)" class="update-btn">Update</button>
-                <!-- Save/Cancel buttons (only show when editing) -->
-                <button v-else @click="saveUpdate(i)" class="save-btn">Save</button>
-                <button v-else @click="cancelUpdate" class="cancel-btn">Cancel</button>
+                <button @click="startUpdate(i)" class="update-btn">Update</button>
                 <button @click="removeItemFromList(i)" class="remove-btn">Remove</button>
               </div>
             </li>
@@ -68,6 +75,7 @@ import { ref } from 'vue'
 import Card from '../components/Card.vue'
 import ShoppingItem from '../components/ShoppingItem.vue'
 import ItemForm from '../components/ItemForm.vue'
+import UpdateForm from '../components/UpdateForm.vue'
 
 const lists = ref([]) // Reactive data: array of shopping lists
 const selectedList = ref(null) // Currently selected list index (null if none selected)
@@ -99,26 +107,22 @@ const addItemToList = (item) => { // Add item to the currently selected list
 }
 
 // updating an item 
-const updatingItem = ref(null) // no item to edit yet
-const updateText = ref('') // the text for editing 
+const updatingItem = ref(null) // tracks which item is being edited
 
 // function to start updating an item 
-const startUpdate = (itemIndex, currentText) => {
-  updatingItem.value = itemIndex; 
-  updateText.value = currentText; 
+const startUpdate = (itemIndex) => {
+  updatingItem.value = itemIndex
 }
-// saving an edit or update to an item 
-const saveUpdate = (itemIndex) => {
-  if (updateText.value.trim()) {
-    lists.value[selectedList.value].items[itemIndex] = updateText.value.trim()
-  }
-  updatingItem.value = null 
-  updateText.value = ''
+
+// saving an edit or update to an item (called by UpdateForm)
+const saveUpdate = (itemIndex, newValue) => {
+  lists.value[selectedList.value].items[itemIndex] = newValue
+  updatingItem.value = null
 }
-// canceling update to an item 
+
+// canceling update to an item (called by UpdateForm)
 const cancelUpdate = () => {
   updatingItem.value = null
-  updateText.value = ''
 }
 
 const removeItemFromList = (itemIndex) => {
@@ -245,13 +249,7 @@ button {
   background: #ff3742;
 }
 
-/* Styling for the update buttons */
-.update-input {
-  width: 100%; 
-  padding: 4px 8px; 
-  border: 1px solid #42b883; 
-  border-radius: 3px; 
-}
+
 
 .update-btn {
   background: #42b883; 

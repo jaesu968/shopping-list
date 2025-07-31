@@ -3,77 +3,61 @@
   <Card>
     <template #left>
       <div class="template-left">
-      <router-link to="/" class="home-btn">
+        <router-link to="/" class="home-btn">
           🏠 Home
         </router-link>
-      <ShoppingItem @add-list="addList" />
+        <ShoppingItem @add-list="addList" />
       </div>
     </template>
 
-    <template #right> <!-- Empty state when no lists exist -->
+    <template #right>
       <div v-if="lists.length === 0">
         <p>No lists yet. Create one on the left.</p>
       </div>
-      <div v-else> <!-- Display all shopping lists-->
+      <div v-else>
         <ul>
           <li v-for="(list, index) in lists" :key="list.id">
             <strong>{{ list.name }}</strong>
-            <!-- click and toggle logic to display a list and hide it-->
-            <!-- If a list is currently selected Hide will show -->
-            <!-- If the list is not currently selected View will show-->
             <button @click="selectedList = selectedList === index ? null : index">
-              {{  selectedList === index ? "Hide" : 'View' }}
+              {{ selectedList === index ? 'Hide' : 'View' }}
             </button>
-            <!-- Renaming and deleting lists-->
             <button @click="renameList(index)">Rename</button>
             <button @click="deleteList(index)">Delete</button>
           </li>
         </ul>
 
-        <div v-if="selectedList !== null" class="item-pane"> <!-- Selected list detail view-->
+        <div v-if="selectedList !== null" class="item-pane">
           <h3>Items in {{ lists[selectedList].name }}</h3>
-          
-          <!-- Show UpdateForm when editing an item -->
-          <UpdateForm 
-            v-if="updatingItem !== null"
-            title="Update Item"
-            placeholder="Enter new item text..."
-            submit-text="Save Item"
-            :initial-value="lists[selectedList].items[updatingItem]"
-            @update="(newValue) => saveUpdate(updatingItem, newValue)"
-            @cancel="cancelUpdate"
-          />
-          
-          <!-- Show Add Item form when not editing -->
-          <ItemForm 
-            v-else
-            :listName="lists[selectedList].name" 
-            @submit="addItemToList" 
-            @cancel="selectedList = null" 
-          />
-          <!-- replacing this section with a table format 
-          <ul>
-            <li v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
-              <div class="item-content">
-                <span class="item-text">{{ item }}</span>
-              </div>
-              <div class="item-actions">
-                <button @click="startUpdate(i)" class="update-btn">Update</button>
-                <button @click="removeItemFromList(i)" class="remove-btn">Remove</button>
-              </div>
-            </li>
-          </ul>
-         --> 
-          <table class="items-table"> 
-            <thead> 
-              <tr> 
+
+          <Modal v-if="showItemForm" @close="closeModal">
+            <template #default>
+              <ItemForm :listName="lists[selectedList].name"
+                :initialItem="updatingItem !== null ? lists[selectedList].items[updatingItem] : null"
+                @submit="handleItemSubmit" @cancel="closeModal" />
+            </template>
+          </Modal>
+
+
+          <button class="add-item-btn" @click="showItemForm = true">➕ Add Item</button>
+
+          <div v-if="showItemForm" class="modal-overlay">
+            <div class="modal">
+              <ItemForm :listName="lists[selectedList].name" @submit="handleItemSubmit"
+                @cancel="showItemForm = false" />
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
                 <th class="item-header">Item Name</th>
                 <th class="actions-header">Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
-                <td class="item-cell">{{ item }}</td>
+                <td class="item-cell">{{ item.name }} (Qty: {{ item.quantity }})</td>
+
                 <td class="actions-cell">
                   <button @click="startUpdate(i)" class="update-btn">Update</button>
                   <button @click="removeItemFromList(i)" class="remove-btn">Remove</button>
@@ -95,10 +79,12 @@ import ShoppingItem from '../components/ShoppingItem.vue'
 import ItemForm from '../components/ItemForm.vue'
 import UpdateForm from '../components/UpdateForm.vue'
 
-const lists = ref([]) // Reactive data: array of shopping lists
-const selectedList = ref(null) // Currently selected list index (null if none selected)
+const lists = ref([])
+const selectedList = ref(null)
+const updatingItem = ref(null)
+const showItemForm = ref(false)
 
-const addList = (name) => { // Add new shopping list with unique ID 
+const addList = (name) => {
   lists.value.push({
     id: Date.now(),
     name,
@@ -106,7 +92,7 @@ const addList = (name) => { // Add new shopping list with unique ID
   })
 }
 
-const deleteList = (index) => { // Delete a shopping list with unique ID (index)
+const deleteList = (index) => {
   if (confirm('Delete this list?')) {
     if (selectedList.value === index) selectedList.value = null
     lists.value.splice(index, 1)
@@ -120,25 +106,24 @@ const renameList = (index) => {
   }
 }
 
-const addItemToList = (item) => { // Add item to the currently selected list
+const addItemToList = (item) => {
   lists.value[selectedList.value].items.push(item)
 }
 
-// updating an item 
-const updatingItem = ref(null) // tracks which item is being edited
+const handleItemSubmit = (item) => {
+  addItemToList(item)
+  showItemForm.value = false
+}
 
-// function to start updating an item 
 const startUpdate = (itemIndex) => {
   updatingItem.value = itemIndex
 }
 
-// saving an edit or update to an item (called by UpdateForm)
 const saveUpdate = (itemIndex, newValue) => {
   lists.value[selectedList.value].items[itemIndex] = newValue
   updatingItem.value = null
 }
 
-// canceling update to an item (called by UpdateForm)
 const cancelUpdate = () => {
   updatingItem.value = null
 }
@@ -149,7 +134,6 @@ const removeItemFromList = (itemIndex) => {
 </script>
 
 <style scoped>
-/* LAYOUT CONTAINERS */
 .template-left {
   display: flex;
   flex-direction: column;
@@ -162,17 +146,16 @@ const removeItemFromList = (itemIndex) => {
   background: #f0f0f0;
   border-radius: 8px;
 }
-/* center footer */ 
+
 .page-footer {
-  text-align: center; 
-  padding: 20px; 
-  margin-top: auto; 
-  font-size: 14px; 
-  color: #666; 
-  border-top: 1px solid #eee; /* visible top border to show footer area */
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
+  font-size: 14px;
+  color: #666;
+  border-top: 1px solid #eee;
 }
 
-/* LIST STYLING */
 ul {
   list-style: none;
   padding: 0;
@@ -186,8 +169,6 @@ li {
   border-radius: 4px;
 }
 
-/* BUTTONS  */
-/* Unified button styling for left panel */
 .template-left button,
 .template-left .home-btn,
 .template-left a {
@@ -206,7 +187,6 @@ li {
   box-sizing: border-box;
 }
 
-/* Home button colors */
 .home-btn {
   background: #42b883;
   color: white;
@@ -216,19 +196,15 @@ li {
   background: #369870;
 }
 
-/* Other buttons */
 button {
   margin-left: 0.5rem;
 }
 
-/* Make "Items in List" heading visible in dark mode */ 
 .item-pane h3 {
-  color: #000 !important; /* !important overrides any inherited dark mode colors 
-   from the parent app, making the text black and visible*/
-  font-weight: bold; 
+  color: #000 !important;
+  font-weight: bold;
 }
 
-/*Item display styling */ 
 .item-row {
   justify-content: space-between;
   align-items: center;
@@ -239,43 +215,96 @@ button {
   margin-bottom: 8px;
 }
 
-/* .item-content {
-  flex: 1;
-}
-  */
-
 .item-text {
   font-size: 14px;
   color: #333;
 }
 
-/* .item-actions {
-  margin-left: 10px;
-} */ 
+.update-btn,
+.remove-btn {
+  min-width: 80px;
+  padding: 2px 6px;
+  font-size: 10px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.update-btn {
+  background-color: #4CAF50;
+  color: white;
+}
 
 .remove-btn {
-  background: #ff4757;
+  background-color: #f44336;
   color: white;
+}
+
+.add-item-btn {
+  margin-top: 1rem;
+  background: #3498db;
+  color: white;
+  padding: 8px 12px;
   border: none;
-  padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 12px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.remove-btn:hover {
-  background: #ff3742;
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-
-
-.update-btn {
-  background: #42b883; 
-  color: white; 
-  margin-right: 5px; 
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-/* Table styling */
+.modal-header {
+  margin-bottom: 1rem;
+  grid-column: span 2;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.cancel-btn {
+  background-color: #ccc;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #bbb;
+}
+
+.two-column-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  flex-grow: 1;
+}
+
 .items-table {
   width: 100%;
   border-collapse: collapse;
@@ -315,4 +344,7 @@ button {
   background-color: #fdfdfd;
 }
 
+.form-full label {
+  margin-bottom: 0.25rem;
+}
 </style>

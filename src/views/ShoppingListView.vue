@@ -1,11 +1,8 @@
-<!-- This is the Shopping List View-->
 <template>
   <Card>
     <template #left>
       <div class="template-left">
-        <router-link to="/" class="home-btn">
-          🏠 Home
-        </router-link>
+        <router-link to="/" class="home-button">🏠 Home</router-link>
         <ShoppingItem @add-list="addList" />
       </div>
     </template>
@@ -16,335 +13,347 @@
       </div>
       <div v-else>
         <ul>
-          <li v-for="(list, index) in lists" :key="list.id">
-            <strong>{{ list.name }}</strong>
-            <button @click="selectedList = selectedList === index ? null : index">
-              {{ selectedList === index ? 'Hide' : 'View' }}
-            </button>
-            <button @click="renameList(index)">Rename</button>
-            <button @click="deleteList(index)">Delete</button>
+          <li v-for="(list, index) in lists" :key="list.id" class="list-entry">
+            <span class="list-name">{{ list.name }}</span>
+            <div class="button-group">
+              <button class="action-btn" @click="selectedList = selectedList === index ? null : index">
+                {{ selectedList === index ? "Hide" : "View" }}
+              </button>
+              <button class="action-btn" @click="renameList(index)">Rename</button>
+              <button class="action-btn delete-btn" @click="deleteList(index)">Delete</button>
+            </div>
           </li>
         </ul>
 
         <div v-if="selectedList !== null" class="item-pane">
-          <h3>Items in {{ lists[selectedList].name }}</h3>
-
-          <Modal v-if="showItemForm" @close="closeModal">
-            <template #default>
-              <ItemForm :listName="lists[selectedList].name"
-                :initialItem="updatingItem !== null ? lists[selectedList].items[updatingItem] : null"
-                @submit="handleItemSubmit" @cancel="closeModal" />
-            </template>
-          </Modal>
-
-
-          <button class="add-item-btn" @click="showItemForm = true">➕ Add Item</button>
+          <h3>
+            Items in <strong>{{ lists[selectedList].name?.trim() || 'Unnamed List' }}</strong>
+          </h3>
 
           <div v-if="showItemForm" class="modal-overlay">
             <div class="modal">
-              <ItemForm :listName="lists[selectedList].name" @submit="handleItemSubmit"
-                @cancel="showItemForm = false" />
+              <ItemForm :key="formKey"
+                :initialItem="updatingItem !== null ? lists[selectedList].items[updatingItem] : null"
+                @submit="handleItemSubmit" @cancel="closeModal" />
             </div>
           </div>
+
+          <button class="add-item-btn" @click="openModal">➕ Add Item</button>
 
           <table class="items-table">
             <thead>
               <tr>
-                <th class="item-header">Item Name</th>
-                <th class="actions-header">Actions</th>
+                <th>
+                  <input type="checkbox" :checked="areAllSelected" @change="toggleSelectAll" />
+                </th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Picked</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, i) in lists[selectedList].items" :key="i" class="item-row">
-                <td class="item-cell">{{ item.name }} (Qty: {{ item.quantity }})</td>
-
-                <td class="actions-cell">
-                  <button @click="startUpdate(i)" class="update-btn">Update</button>
-                  <button @click="removeItemFromList(i)" class="remove-btn">Remove</button>
+              <tr v-for="(item, itemIndex) in lists[selectedList].items" :key="itemIndex"
+                :class="{ picked: item.picked }">
+                <td>
+                  <input type="checkbox" :value="itemIndex" v-model="selectedItems" />
+                </td>
+                <td>{{ item.itemName || 'Unnamed' }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>
+                  <input type="checkbox" v-model="item.picked"
+                    @change="updateItemStatus(selectedList, itemIndex, item.picked)" />
+                </td>
+                <td>
+                  <button @click="editItem(itemIndex)">View</button>
+                  <button @click="deleteItem(itemIndex)">Delete</button>
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <div v-if="selectedItems.length > 0" class="bulk-actions">
+            <button @click="deleteSelectedItems">🗑 Delete Selected</button>
+          </div>
         </div>
       </div>
     </template>
   </Card>
-  <footer class="page-footer">&copy; 2025 Shopping List App - CIS 385</footer>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import Card from '../components/Card.vue'
-import ShoppingItem from '../components/ShoppingItem.vue'
-import ItemForm from '../components/ItemForm.vue'
-import UpdateForm from '../components/UpdateForm.vue'
+<script>
+import ShoppingItem from "@/components/ShoppingItem.vue";
+import ItemForm from "@/components/ItemForm.vue";
+import Card from "@/components/Card.vue";
 
-const lists = ref([])
-const selectedList = ref(null)
-const updatingItem = ref(null)
-const showItemForm = ref(false)
-
-const addList = (name) => {
-  lists.value.push({
-    id: Date.now(),
-    name,
-    items: []
-  })
-}
-
-const deleteList = (index) => {
-  if (confirm('Delete this list?')) {
-    if (selectedList.value === index) selectedList.value = null
-    lists.value.splice(index, 1)
-  }
-}
-
-const renameList = (index) => {
-  const newName = prompt('New list name:', lists.value[index].name)
-  if (newName?.trim()) {
-    lists.value[index].name = newName.trim()
-  }
-}
-
-const addItemToList = (item) => {
-  lists.value[selectedList.value].items.push(item)
-}
-
-const handleItemSubmit = (item) => {
-  addItemToList(item)
-  showItemForm.value = false
-}
-
-const startUpdate = (itemIndex) => {
-  updatingItem.value = itemIndex
-}
-
-const saveUpdate = (itemIndex, newValue) => {
-  lists.value[selectedList.value].items[itemIndex] = newValue
-  updatingItem.value = null
-}
-
-const cancelUpdate = () => {
-  updatingItem.value = null
-}
-
-const removeItemFromList = (itemIndex) => {
-  lists.value[selectedList.value].items.splice(itemIndex, 1)
-}
+export default {
+  components: {
+    ShoppingItem,
+    ItemForm,
+    Card,
+  },
+  data() {
+    return {
+      lists: [],
+      selectedList: null,
+      showItemForm: false,
+      updatingItem: null,
+      selectedItems: [],
+      formKey: 0,
+    };
+  },
+  computed: {
+    areAllSelected() {
+      const items = this.lists[this.selectedList]?.items || [];
+      return items.length > 0 && this.selectedItems.length === items.length;
+    },
+  },
+  methods: {
+    addList(listName) {
+      this.lists.push({
+        id: Date.now(),
+        name: listName,
+        items: [],
+      });
+    },
+    renameList(index) {
+      const newName = prompt("Enter new list name:", this.lists[index].name);
+      if (newName) this.lists[index].name = newName;
+    },
+    deleteList(index) {
+      if (confirm("Are you sure you want to delete this list?")) {
+        this.lists.splice(index, 1);
+        if (this.selectedList === index) this.selectedList = null;
+      }
+    },
+    openModal() {
+      this.updatingItem = null;
+      this.showItemForm = true;
+    },
+    closeModal() {
+      this.showItemForm = false;
+      this.updatingItem = null;
+    },
+    handleItemSubmit(item) {
+      if (this.updatingItem !== null) {
+        this.lists[this.selectedList].items.splice(this.updatingItem, 1, item);
+      } else {
+        this.lists[this.selectedList].items.push(item);
+      }
+      this.closeModal();
+    },
+    editItem(index) {
+      this.updatingItem = index;
+      this.showItemForm = true;
+    },
+    deleteItem(index) {
+      this.lists[this.selectedList].items.splice(index, 1);
+    },
+    updateItemStatus(listIndex, itemIndex, status) {
+      this.lists[listIndex].items[itemIndex].picked = status;
+    },
+    deleteSelectedItems() {
+      this.lists[this.selectedList].items = this.lists[this.selectedList].items.filter(
+        (item, index) => !this.selectedItems.includes(index)
+      );
+      this.selectedItems = [];
+    },
+    toggleSelectAll() {
+      const items = this.lists[this.selectedList]?.items || [];
+      if (this.selectedItems.length === items.length) {
+        this.selectedItems = [];
+      } else {
+        this.selectedItems = items.map((_, index) => index);
+      }
+    },
+  },
+};
 </script>
 
 <style scoped>
-.template-left {
+/* Base Layout */
+.list-entry {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.item-pane {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f0f0f0;
-  border-radius: 8px;
-}
-
-.page-footer {
-  text-align: center;
-  padding: 20px;
-  margin-top: auto;
-  font-size: 14px;
-  color: #666;
-  border-top: 1px solid #eee;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  background: #fff;
-  color: #000;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-
-.template-left button,
-.template-left .home-btn,
-.template-left a {
-  width: 100%;
-  height: 40px;
-  padding: 8px 16px;
-  margin: 0 0 10px 0;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.home-btn {
-  background: #42b883;
-  color: white;
-}
-
-.home-btn:hover {
-  background: #369870;
-}
-
-button {
-  margin-left: 0.5rem;
-}
-
-.item-pane h3 {
-  color: #000 !important;
-  font-weight: bold;
-}
-
-.item-row {
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.item-text {
-  font-size: 14px;
-  color: #333;
+.list-name {
+  font-weight: 600;
+  color: #111827;
 }
 
-.update-btn,
-.remove-btn {
-  min-width: 80px;
-  padding: 2px 6px;
-  font-size: 10px;
-  border-radius: 5px;
-  text-align: center;
+.button-group {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.update-btn {
-  background-color: #4CAF50;
+.action-btn {
+  background-color: #34d399;
   color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
-.remove-btn {
-  background-color: #f44336;
-  color: white;
+.action-btn:hover {
+  opacity: 0.9;
+}
+
+.delete-btn {
+  background-color: #ef4444 !important;
+}
+
+/* Item Pane + Modal */
+.item-pane {
+  margin-top: 1rem;
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 10px;
+  color: black;
+}
+
+.item-pane h3 strong {
+  font-weight: 700;
+  color: #111827;
 }
 
 .add-item-btn {
-  margin-top: 1rem;
-  background: #3498db;
+  background-color: #3b82f6;
   color: white;
-  padding: 8px 12px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+}
+
+.add-item-btn:hover {
+  opacity: 0.9;
 }
 
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
 }
 
 .modal {
   background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  max-width: 800px;
-  width: 100%;
+  padding: 1.5rem;
+  margin: 5% auto;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
-.modal-header {
-  margin-bottom: 1rem;
-  grid-column: span 2;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: auto;
-}
-
-.cancel-btn {
-  background-color: #ccc;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.cancel-btn:hover {
-  background-color: #bbb;
-}
-
-.two-column-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  flex-grow: 1;
-}
-
+/* Table Styling */
 .items-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
-  background: white;
+  background-color: #ffffff;
 }
 
-.items-table th {
-  background-color: #f5f5f5;
-  padding: 12px;
-  text-align: left;
-  border-bottom: 2px solid #ddd;
-  font-weight: bold;
-  color: #333;
-}
-
+.items-table th,
 .items-table td {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
+  padding: 0.5rem;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
 }
 
-.item-cell {
-  font-size: 14px;
-  color: #333;
+.items-table th:first-child,
+.items-table td:first-child {
+  width: 40px;
+  text-align: center;
 }
 
-.actions-cell {
-  white-space: nowrap;
-  text-align: right;
+.items-table tbody tr:nth-child(odd) {
+  background-color: #f9fafb;
 }
 
-.items-table tr:hover {
-  background-color: #f9f9f9;
+.items-table tbody tr:hover {
+  background-color: #f3f4f6;
 }
 
-.items-table tr:nth-child(even) {
-  background-color: #fdfdfd;
+.items-table td button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 6px;
+  transition: background-color 0.2s ease;
 }
 
-.form-full label {
-  margin-bottom: 0.25rem;
+.items-table td button:first-of-type {
+  background-color: #6366f1;
+  color: #fff;
+}
+
+.items-table td button:first-of-type:hover {
+  background-color: #4f46e5;
+}
+
+.items-table td button:last-of-type {
+  background-color: #ef4444;
+  color: #fff;
+}
+
+.items-table td button:last-of-type:hover {
+  background-color: #dc2626;
+}
+
+.bulk-actions {
+  margin-top: 1rem;
+}
+
+.bulk-actions button {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.bulk-actions button:hover {
+  background-color: #dc2626;
+}
+
+.picked td {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+/* Home Button */
+.home-button {
+  width: 100%;
+  height: 40px;
+  display: inline-block;
+  padding: 12px 24px;
+  margin: 0 0 10px 0;
+  background-color: #2ecc71;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 4px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.home-button:hover {
+  background-color: #27ae60;
 }
 </style>

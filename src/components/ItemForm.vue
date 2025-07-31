@@ -3,7 +3,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="itemName">Item Name:</label>
-                <input id="itemName" v-model="item.name" required />
+                <input id="itemName" v-model="item.itemName" required />
             </div>
             <div class="form-group">
                 <label for="quantity">Quantity:</label>
@@ -46,19 +46,25 @@
         </div>
 
         <div class="button-group">
-            <button type="submit" class="submit-btn">Add to List</button>
+            <button type="submit" class="submit-btn">
+                {{ props.initialItem ? 'Update Item' : 'Add to List' }}
+            </button>
             <button type="button" class="cancel-btn" @click="$emit('cancel')">Cancel</button>
         </div>
     </form>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+
+const props = defineProps({
+    initialItem: Object
+})
 
 const emit = defineEmits(['submit', 'cancel'])
 
 const item = ref({
-    name: '',
+    itemName: '',
     quantity: '',
     brand: '',
     category: '',
@@ -66,6 +72,12 @@ const item = ref({
     weight: '',
     notes: ''
 })
+
+watch(() => props.initialItem, (newItem) => {
+    if (newItem) {
+        item.value = { ...newItem }
+    }
+}, { immediate: true })
 
 const brands = ref([])
 const categories = ref([])
@@ -81,7 +93,7 @@ function submitForm() {
     emit('submit', { ...item.value })
 
     item.value = {
-        name: '',
+        itemName: '',
         quantity: '',
         brand: '',
         category: '',
@@ -89,6 +101,7 @@ function submitForm() {
         weight: '',
         notes: ''
     }
+
 }
 </script>
 

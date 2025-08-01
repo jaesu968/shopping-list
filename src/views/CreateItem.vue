@@ -4,9 +4,6 @@
             <h2>Create New List</h2>
             <ShoppingItem @add="handleAddItem" />
         </template>
-        <template #right>
-            <p>Form preview or additional details can go here.</p>
-        </template>
     </Card>
 </template>
 

@@ -107,6 +107,9 @@ export default {
       const items = this.lists[this.selectedList]?.items || [];
       return items.length > 0 && this.selectedItems.length === items.length;
     },
+    isDarkMode() {
+      return document.body.classList.contains('dark');
+    },
   },
   methods: {
     addList(listName) {
@@ -171,21 +174,20 @@ export default {
 </script>
 
 <style scoped>
-/* Base Layout */
 .list-entry {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
-  background-color: #ffffff;
+  background-color: var(--card-bg);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .list-name {
   font-weight: 600;
-  color: #111827;
+  color: var(--text-color);
 }
 
 .button-group {
@@ -211,25 +213,29 @@ export default {
   background-color: #ef4444 !important;
 }
 
-/* Item Pane + Modal */
 .item-pane {
   margin-top: 1rem;
-  background: #f9fafb;
+  background: var(--card-bg);
   padding: 1rem;
   border-radius: 10px;
-  color: black;
+  color: var(--text-color);
+}
+
+.item-pane h3 {
+  margin-bottom: 1.25rem;
+  color: var(--text-color);
 }
 
 .item-pane h3 strong {
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
 }
 
 .add-item-btn {
   background-color: #3b82f6;
   color: white;
   padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -246,30 +252,55 @@ export default {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
 }
 
 .modal {
-  background: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   padding: 1.5rem;
-  margin: 5% auto;
-  width: 90%;
-  max-width: 500px;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  min-width: 400px;
+  max-width: 90%;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Table Styling */
+.modal input,
+.modal select,
+.modal textarea {
+  background-color: var(--outer-bg);
+  color: var(--text-color);
+  border: 1px solid rgba(100, 100, 100, 0.4);
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
 .items-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #ffffff;
+  background-color: var(--card-bg);
+  color: var(--text-color);
 }
 
 .items-table th,
 .items-table td {
   padding: 0.5rem;
-  color: #111827;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
   text-align: left;
 }
 
@@ -280,11 +311,11 @@ export default {
 }
 
 .items-table tbody tr:nth-child(odd) {
-  background-color: #f9fafb;
+  background-color: var(--row-alt-bg);
 }
 
 .items-table tbody tr:hover {
-  background-color: #f3f4f6;
+  background-color: var(--row-hover-bg);
 }
 
 .items-table td button {
@@ -337,7 +368,6 @@ export default {
   color: #6b7280;
 }
 
-/* Home Button */
 .home-button {
   width: 100%;
   height: 40px;

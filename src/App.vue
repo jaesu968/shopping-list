@@ -70,11 +70,15 @@ button {
   --outer-bg: #121212;
   --card-bg: #1e1e1e;
   --text-color: #ffffff;
+  --row-alt-bg: rgba(255, 255, 255, 0.05);
+  --row-hover-bg: rgba(255, 255, 255, 0.08);
 }
 
 .light {
   --outer-bg: #eeeeee;
   --card-bg: #ffffff;
   --text-color: #222222;
+  --row-alt-bg: rgba(0, 0, 0, 0.04);
+  --row-hover-bg: rgba(0, 0, 0, 0.07);
 }
 </style>

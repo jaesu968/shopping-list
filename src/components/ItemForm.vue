@@ -106,18 +106,69 @@ function submitForm() {
 </script>
 
 <style scoped>
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
-    background-color: #1e1e1e;
-    color: #f0f0f0;
-    border-radius: 8px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* keep semi-transparent black overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
 }
+
+.modal {
+    background-color: var(--card-bg);
+    /* 🔥 Use theme variable */
+    color: var(--text-color);
+    /* 🔥 Text matches theme */
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+}
+
+.modal label {
+    color: var(--text-color);
+    /* Ensure label text matches theme */
+}
+
+.modal input,
+.modal textarea,
+.modal select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: var(--card-bg);
+    /* match modal background */
+    color: var(--text-color);
+    /* match theme text color */
+}
+
+.modal button {
+    margin-right: 10px;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.modal .confirm {
+    background-color: #4caf50;
+    color: white;
+}
+
+.modal .cancel {
+    background-color: #f44336;
+    color: white;
+}
+
 
 .form-row {
     display: flex;

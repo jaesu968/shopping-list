@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <!-- Reusable card layout with left/right sections -->
   <div class="card-container">
   <!--Left section of the card-->
@@ -46,3 +47,36 @@ export default {
     --card-bg: #ffffff;
 }
 </style>
+=======
+    <div class="card-container">
+      <div class="card-left">
+        <slot name="left" />
+      </div>
+      <div class="card-right">
+        <slot name="right" />
+      </div>
+    </div>
+  </template>
+  
+  <style scoped>
+  .card-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 2rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    min-height: 400px;
+  }
+  
+  .card-left,
+  .card-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  </style>
+  
+>>>>>>> be84bb565a1a2572418e8f1b58ff5c3029cfe7e3

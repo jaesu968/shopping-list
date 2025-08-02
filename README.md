@@ -10,15 +10,17 @@ A Vue 3 shopping list management application with dark/light mode toggle.
 - Responsive design
 
 ## How to Use
-1. Click "Create New Shopping List" to create a list
-2. Click "View" to see items in a list
-3. Add items using the form
-4. Use rename/delete buttons to manage lists
+1. Click "Create New Shopping List" and enter a name
+2. Click "View" on a list to see its items
+3. Add items using the form that appears
+4. Click "Update" on items to edit them
+5. Use "Rename" and "Delete" buttons to manage lists
 
 ## Project Structure
 - `ShoppingListView.vue` - Main app view
 - `ShoppingItem.vue` - Create new lists component
 - `ItemForm.vue` - Add items to lists
+- `UpdateForm.vue` - Reusable update component for items
 - `Card.vue` - Layout component
 
 ## Development
@@ -50,6 +52,14 @@ npm run build
 ```
 
 ### Components
+
+- ShoppingItem.vue - Create Shopping Lists
+    - Shows a "Create New Shopping List" button
+    - When clicked, displays an input field for the list name
+    - Has Create and Cancel buttons
+    - Sends the new list name to the main view
+    - Resets the form after creating a list
+
 - DetailView.vue - Displays the details of a selected shopping list.
 
     - Reads the list ID from the URL using `vue-router`
@@ -64,6 +74,12 @@ npm run build
     - Supports theming via CSS variables
     - Designed to work in `DetailView.vue`, and potentially other views
 
+- UpdateForm.vue - Edit Text Component 
+    - Reusable form for editing any text (list names, items, etc.)
+    - Shows an input field with the current value
+    - Has Save and Cancel buttons
+    - Can be customized with different titles and button text
+    - Used throughout the app for consistent editing experience
 This is a Vue App to create, update, modify and delete Shopping Lists.
 
 The views hold the UI parts and the Components hold specifc functionality.

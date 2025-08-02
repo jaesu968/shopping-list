@@ -49,6 +49,21 @@ npm run dev
 npm run build
 ```
 
+### Components
+- DetailView.vue - Displays the details of a selected shopping list.
+
+    - Reads the list ID from the URL using `vue-router`
+    - Finds the matching list using mock data
+    - Renders each item using the `Card.vue` component
+    - Includes conditional logic to show a fallback message for empty or missing lists
+    - Prepares for integration with real data in Phase 2
+
+- Card.vue - Reusable layout component that accepts named slots.
+    - Displays content in two side-by-side sections (`left` and `right`)
+    - Built using Flexbox
+    - Supports theming via CSS variables
+    - Designed to work in `DetailView.vue`, and potentially other views
+
 This is a Vue App to create, update, modify and delete Shopping Lists.
 
 The views hold the UI parts and the Components hold specifc functionality.

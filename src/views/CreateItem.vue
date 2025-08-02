@@ -19,8 +19,9 @@
 </template>
 
 <script setup>
-import Card from '../components/Card.vue'
-import ShoppingItem from '../components/ShoppingItem.vue'
+// Import required components
+import Card from '../components/Card.vue' // Layout wrapper component
+import ShoppingItem from '../components/ShoppingItem.vue' // List creation form
 
 function handleAddItem(item) {
     console.log('Item added:', item)

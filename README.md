@@ -13,38 +13,37 @@ A Vue 3 shopping list management application with dark/light mode toggle.
 1. Click "Create New Shopping List" and enter a name
 
 <img src="./src/assets/README%20Assets/listName.png" alt="enterListName" width="750">  
-![enterListName](./src/assets/README%20Assets/listName.png)
 
 3. Click "View" on a list to see its items
-   
-![listView](./src/assets/README%20Assets/listView.png)
 
-5. Select the "Add Item" button to start adding items to the list.
+<img src="./src/assets/README%20Assets/listView.png" alt="listView" width="750">
+
+4. Select the "Add Item" button to start adding items to the list.
    A pop-out form will open to allow you to enter information about your
    item.
-   
-![itemEntry](./src/assets/README%20Assets/addItem.png)
 
-6. Click "Update" on items to edit them
-   
-![itemList](./src/assets/README%20Assets/itemList.png)
+<img src="./src/assets/README%20Assets/addItem.png" alt="listView" width="750">
 
-![itemUpdate](./src/assets/README%20Assets/itemUpdate.png)
+5. Click "Update" on items to edit them
 
-7. Use the "Hide," "Rename," and "Delete" buttons to manage lists
+<img src="./src/assets/README%20Assets/itemList.png" alt="itemList" width="750">
 
-![renameList](./src/assets/README%20Assets/renameList.png)
+<img src="./src/assets/README%20Assets/itemUpdate.png" alt="itemUpdate" width="750">
 
-![deleteList](./src/assets/README%20Assets/deleteList.png)
+6. Use the "Hide," "Rename," and "Delete" buttons to manage lists
 
-8. Set list items as picked up as you collect your shopping items
+<img src="./src/assets/README%20Assets/renameList.png" alt="renameList" width="750">
+
+<img src="./src/assets/README%20Assets/deleteList.png" alt="deleteList" width="750">
+
+7. Set list items as picked up as you collect your shopping items
     
-![itemPicked](./src/assets/README%20Assets/itemPicked.png)
+<img src="./src/assets/README%20Assets/itemPicked.png" alt="itemPicked" width="750">
 
-9. Delete individual items or select multiple items and delete
+8. Delete individual items or select multiple items and delete
    Several at a time
 
-![multDelete](./src/assets/README%20Assets/multiDelete.png)
+<img src="./src/assets/README%20Assets/multiDelete.png" alt="multiDelete" width="750">
 
 
 ## Project Structure

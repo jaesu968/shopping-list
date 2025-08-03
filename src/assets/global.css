@@ -81,13 +81,16 @@ body {
   max-width: 960px;
   width: 100%;
   padding: 1rem;
-  /* reduced from 2rem */
   box-sizing: border-box;
+
+  /* ✅ Prevent horizontal overflow */
+  overflow-x: hidden;
 }
 
 /* Pane Styling */
 .pane {
   flex: 1;
+  min-width: 0;
   margin: 0.5rem;
   background-color: var(--card-bg);
   border-radius: 8px;
@@ -132,6 +135,21 @@ textarea {
   border: 1px solid var(--accent-color);
   background-color: var(--card-bg);
   color: var(--text-color);
+}
+
+/* ✅ Constrain input widths to avoid app stretching */
+form input[type="text"],
+form input[type="number"],
+form input[type="email"] {
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+}
+
+/* ✅ Prevent focus outline from expanding width */
+form input:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 0;
 }
 
 input[type="checkbox"] {
@@ -221,13 +239,11 @@ input[type="checkbox"] {
 
 .primary-button:hover {
   background-color: var(--btn-hover-bg, #369870);
-  ;
 }
 
 /* Cancel button – styled red for visibility */
 .cancel-button {
   background-color: #cc3333;
-  /* Red background */
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -257,11 +273,28 @@ input[type="checkbox"] {
   transition: background-color 0.3s;
   margin-right: 0.75rem;
   color: var(--text-color);
-  /* Adds space between buttons when side by side */
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
 .shared-button:focus {
   background-color: var(--btn-hover-bg, #369870);
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
+}
+
+/* Layout debug and control */
+.create-list-form,
+.create-list-form input,
+input[type="text"] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.pane,
+.form-row,
+.form-group,
+.list-pane {
+  min-width: 0;
 }

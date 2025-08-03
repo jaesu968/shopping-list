@@ -3,7 +3,7 @@
     <!-- Left slot: Home button and form to add a new list -->
     <template #left>
       <div class="template-left">
-        <router-link to="/" class="home-button">🏠 Home</router-link>
+        <button class="shared-button" @click="goHome">🏠 Home</button>
         <ShoppingItem @add-list="addList" />
       </div>
     </template>
@@ -11,7 +11,7 @@
     <!-- Right slot: Either a message or the list of created shopping lists -->
     <template #right>
       <div v-if="lists.length === 0">
-        <p>No lists yet. Create one on the left.</p>
+        <p>No lists have been created. Use the controls on the left to create a list.</p>
       </div>
 
       <!-- Display existing lists if any -->
@@ -34,11 +34,7 @@
         </ul>
 
         <!-- Display UpdateItem component if a list is selected -->
-        <UpdateItem
-          v-if="selectedList !== null"
-          :list="lists[selectedList]"
-          @update-list="updateListItems"
-        />
+        <UpdateItem v-if="selectedList !== null" :list="lists[selectedList]" @update-list="updateListItems" />
       </div>
     </template>
   </Card>
@@ -116,7 +112,8 @@ export default {
 }
 
 .action-btn {
-  background-color: #34d399; /* teal */
+  background-color: #34d399;
+  /* teal */
   color: white;
   border: none;
   padding: 0.4rem 0.75rem;
@@ -131,26 +128,29 @@ export default {
 }
 
 .delete-btn {
-  background-color: #ef4444 !important; /* red */
+  background-color: #ef4444 !important;
+  /* red */
 }
 
 .home-button {
   width: 100%;
-  height: 40px;
-  display: inline-block;
-  padding: 12px 24px;
-  margin-bottom: 10px;
-  background-color: #2ecc71; /* green */
+  /* full container width */
+  min-height: 40px;
+  /* consistent height */
+  padding: 10px 16px;
+  /* enough padding */
+  font-size: 16px;
+  /* readable */
+  border-radius: 6px;
+  /* smooth corners */
+  background-color: var(--btn-bg, #42b883);
+  /* theme-friendly */
   color: white;
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: 4px;
-  text-align: center;
-  transition: background-color 0.3s ease;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .home-button:hover {
-  background-color: #27ae60;
+  background-color: var(--btn-hover-bg, #369870);
 }
 </style>
-

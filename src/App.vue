@@ -1,13 +1,18 @@
 <template>
-  <div :class="`app-container ${isDark ? 'dark' : 'light'}`">
-    <div class="app-wrapper">
-      <header class="app-header">
-        <h1>Shopping List App</h1>
-        <button class="btn btn-secondary" @click="toggleMode">
+  <div>
+    <header class="app-header">
+      <div class="header-bar">
+        <h1 class="app-title">Shopping List App</h1>
+        <button class="btn btn-secondary theme-toggle" @click="toggleMode">
           {{ isDark ? '☀️ Light Mode' : '🌙 Dark Mode' }}
         </button>
-      </header>
-      <router-view />
+      </div>
+    </header>
+
+    <div :class="`app-container ${isDark ? 'dark' : 'light'}`">
+      <div class="app-wrapper">
+        <router-view />
+      </div>
     </div>
   </div>
 </template>

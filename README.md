@@ -20,7 +20,7 @@ A Vue 3 shopping list management application with dark/light mode toggle.
 - `ShoppingListView.vue` - Main app view
 - `ShoppingItem.vue` - Create new lists component
 - `ItemForm.vue` - Add items to lists
-- `UpdateForm.vue` - Reusable update component for items
+- `UpdateItem.vue` - Reusable update component for items
 - `Card.vue` - Layout component
 
 ## Development
@@ -74,7 +74,7 @@ npm run build
     - Supports theming via CSS variables
     - Designed to work in `DetailView.vue`, and potentially other views
 
-- UpdateForm.vue - Edit Text Component 
+- UpdateItem.vue - Edit Text Component 
     - Reusable form for editing any text (list names, items, etc.)
     - Shows an input field with the current value
     - Has Save and Cancel buttons

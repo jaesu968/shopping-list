@@ -8,12 +8,8 @@
     <!-- Modal form for adding or updating an item -->
     <div v-if="showItemForm" class="modal-overlay">
       <div class="modal">
-        <ItemForm
-          :key="formKey"
-          :initialItem="updatingItem !== null ? list.items[updatingItem] : null"
-          @submit="handleItemSubmit"
-          @cancel="closeModal"
-        />
+        <ItemForm :key="formKey" :initialItem="updatingItem !== null ? list.items[updatingItem] : null"
+          @submit="handleItemSubmit" @cancel="closeModal" />
       </div>
     </div>
 
@@ -33,21 +29,13 @@
       </thead>
       <tbody>
         <!-- Iterate through list items -->
-        <tr
-          v-for="(item, itemIndex) in list.items"
-          :key="itemIndex"
-          :class="{ picked: item.picked }"
-        >
+        <tr v-for="(item, itemIndex) in list.items" :key="itemIndex" :class="{ picked: item.picked }">
           <td><input type="checkbox" :value="itemIndex" v-model="selectedItems" /></td>
           <td>{{ item.itemName || 'Unnamed' }}</td>
           <td>{{ item.quantity }}</td>
           <td>
             <!-- Checkbox to mark item as picked -->
-            <input
-              type="checkbox"
-              v-model="item.picked"
-              @change="updateItemStatus(itemIndex, item.picked)"
-            />
+            <input type="checkbox" v-model="item.picked" @change="updateItemStatus(itemIndex, item.picked)" />
           </td>
           <td>
             <!-- View/edit and delete buttons -->
@@ -176,7 +164,8 @@ export default {
 
 /* Add item button */
 .add-item-btn {
-  background-color: #3b82f6; /* blue */
+  background-color: #3b82f6;
+  /* blue */
   color: white;
   padding: 0.5rem 1rem;
   margin-bottom: 1.5rem;
@@ -279,7 +268,8 @@ export default {
 }
 
 .items-table td button.view-btn {
-  background-color: #6366f1; /* indigo */
+  background-color: #6366f1;
+  /* indigo */
   color: #fff;
 }
 
@@ -318,6 +308,7 @@ export default {
 /* Styling for picked (completed) items */
 .picked td {
   text-decoration: line-through;
-  color: #6b7280; /* muted gray */
+  color: #6b7280;
+  /* muted gray */
 }
 </style>

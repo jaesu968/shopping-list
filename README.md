@@ -11,23 +11,38 @@ A Vue 3 shopping list management application with dark/light mode toggle.
 
 ## How to Use
 1. Click "Create New Shopping List" and enter a name
+   
 ![enterListName](./src/assets/README%20Assets/listName.png)
-2. Click "View" on a list to see its items
+
+3. Click "View" on a list to see its items
+   
 ![listView](./src/assets/README%20Assets/listView.png)
-3. Select the "Add Item" button to start adding items to the list.
+
+5. Select the "Add Item" button to start adding items to the list.
    A pop-out form will open to allow you to enter information about your
    item.
+   
 ![itemEntry](./src/assets/README%20Assets/addItem.png)
-4. Click "Update" on items to edit them
+
+6. Click "Update" on items to edit them
+   
 ![itemList](./src/assets/README%20Assets/itemList.png)
+
 ![itemUpdate](./src/assets/README%20Assets/itemUpdate.png)
-5. Use the "Hide," "Rename," and "Delete" buttons to manage lists
+
+7. Use the "Hide," "Rename," and "Delete" buttons to manage lists
+
 ![renameList](./src/assets/README%20Assets/renameList.png)
+
 ![deleteList](./src/assets/README%20Assets/deleteList.png)
-6. Set list items as picked up as you collect your shopping items
+
+8. Set list items as picked up as you collect your shopping items
+    
 ![itemPicked](./src/assets/README%20Assets/itemPicked.png)
-7. Delete individual items or select multiple items and delete
+
+9. Delete individual items or select multiple items and delete
    Several at a time
+
 ![multDelete](./src/assets/README%20Assets/multiDelete.png)
 
 

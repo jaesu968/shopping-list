@@ -1,10 +1,10 @@
 <template>
   <div> <!-- Container for new list creation form -->
     <div v-if="!showNameInput"> <!-- Show create button when input is hidden -->
-      <button @click="showNameInput = true" class="shared-button">Create New Shopping List</button>
+      <button @click="showNameInput = true" class="shared-button">Create New Shopping List</button><br>
     </div>
     <div v-else> <!-- Show input form when creating a new list -->
-      <input v-model="newListName" placeholder="List name..." />
+      <input v-model="newListName" placeholder="List name..." /><br>
       <button @click="confirmAdd" class="primary-button">Create</button>
       <button @click="cancelAdd" class="cancel-button">Cancel</button>
     </div>
@@ -30,25 +30,4 @@ const cancelAdd = () => { // Handle creation cancellation
 }
 </script>
 
-<style scoped>
-input {
-  width: 100%;
-  height: 40px;
-  padding: 8px 16px;
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: 4px;
-  margin-bottom: 10px;
-  box-sizing: border-box;
-  background-color: var(--color-background-soft, #f8f8f8);
-  color: var(--text-color);
-}
-
-input::placeholder {
-  color: var(--color-text-muted, #888);
-}
-
-/* Use inherited text color for container */
-div {
-  color: var(--text-color);
-}
-</style>
+<style scoped></style>

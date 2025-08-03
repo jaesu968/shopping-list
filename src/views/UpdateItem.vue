@@ -20,7 +20,7 @@
     <table class="items-table">
       <thead>
         <tr>
-          <th><input type="checkbox" :checked="areAllSelected" @change="toggleSelectAll" /></th>
+          <th><input type="checkbox" :checked="areAllSelected" @change="toggleSelectAll" class="item-checkbox" /></th>
           <th>Name</th>
           <th>Quantity</th>
           <th>Picked</th>
@@ -30,12 +30,13 @@
       <tbody>
         <!-- Iterate through list items -->
         <tr v-for="(item, itemIndex) in list.items" :key="itemIndex" :class="{ picked: item.picked }">
-          <td><input type="checkbox" :value="itemIndex" v-model="selectedItems" /></td>
+          <td><input type="checkbox" :value="itemIndex" v-model="selectedItems" class="item-checkbox" /></td>
           <td>{{ item.itemName || 'Unnamed' }}</td>
           <td>{{ item.quantity }}</td>
           <td>
             <!-- Checkbox to mark item as picked -->
-            <input type="checkbox" v-model="item.picked" @change="updateItemStatus(itemIndex, item.picked)" />
+            <input type="checkbox" v-model="item.picked" @change="updateItemStatus(itemIndex, item.picked)"
+              class="item-checkbox" />
           </td>
           <td>
             <!-- View/edit and delete buttons -->
@@ -310,5 +311,44 @@ export default {
   text-decoration: line-through;
   color: #6b7280;
   /* muted gray */
+}
+
+/* Ensure vertical alignment for all table cell contents */
+.items-table td,
+.items-table th {
+  vertical-align: middle;
+}
+
+/* Inline alignment for checkbox and buttons */
+.items-table td input[type="checkbox"].item-checkbox {
+  margin: 8px;
+  display: inline-block;
+  vertical-align: middle;
+  transform: none;
+  /* override previous translateY */
+}
+
+/* Adjust padding for first column (checkboxes) and last (buttons) */
+.items-table td:first-child {
+  text-align: center;
+  padding: 0.4rem 0.25rem;
+}
+
+/* Optional: align buttons better with checkbox */
+.items-table td:last-child {
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+}
+
+.items-table th input[type="checkbox"].item-checkbox {
+  margin: 0;
+  display: inline-block;
+  vertical-align: middle;
+  transform: none;
+}
+
+/* Make header cells vertically centered for good measure */
+.items-table th {
+  vertical-align: middle;
 }
 </style>

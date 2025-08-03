@@ -45,7 +45,7 @@ body {
   justify-content: center;
   background-color: transparent;
   margin-top: 0.5rem;
-  margin-bottom: 0;
+  margin-bottom: 0.5rem;
   padding: 0;
 }
 
@@ -64,8 +64,8 @@ body {
   font-size: 2rem;
   font-weight: bold;
   margin: 0;
-  color: var(--text-color);
   padding-left: 1rem;
+  padding-top: 1.5rem;
 }
 
 /* Theme toggle button */
@@ -81,7 +81,6 @@ body {
   color: var(--text-color);
   display: flex;
   justify-content: center;
-  padding: 2rem;
 }
 
 /* Main layout wrapper for content panes */
@@ -276,7 +275,7 @@ input[type="checkbox"] {
 
 /* Red cancel button */
 .cancel-button {
-  background-color: #cc3333;
+  background-color: #ef4444;
   border: none;
   padding: 0.5rem 1rem;
   font-size: 1rem;
@@ -287,7 +286,7 @@ input[type="checkbox"] {
 }
 
 .cancel-button:hover {
-  background-color: #aa2222;
+  background-color: #dc2626;
 }
 
 /* Spacing between buttons in button groups */

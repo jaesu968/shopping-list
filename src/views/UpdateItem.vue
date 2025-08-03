@@ -269,13 +269,13 @@ export default {
 }
 
 .items-table td button.view-btn {
-  background-color: #6366f1;
+  background-color: #3b82f6;
   /* indigo */
   color: #fff;
 }
 
 .items-table td button.view-btn:hover {
-  background-color: #4f46e5;
+  background-color: #2563eb;
 }
 
 .items-table td button.delete-btn {

@@ -1,9 +1,11 @@
 <template>
   <div class="item-pane">
+    <!-- Header displaying the name of the current list -->
     <h3>
       Items in <strong>{{ list.name?.trim() || 'Unnamed List' }}</strong>
     </h3>
 
+    <!-- Modal form for adding or updating an item -->
     <div v-if="showItemForm" class="modal-overlay">
       <div class="modal">
         <ItemForm
@@ -15,8 +17,10 @@
       </div>
     </div>
 
+    <!-- Button to trigger the item creation modal -->
     <button class="add-item-btn" @click="openModal">➕ Add Item</button>
 
+    <!-- Table of items in the list -->
     <table class="items-table">
       <thead>
         <tr>
@@ -28,6 +32,7 @@
         </tr>
       </thead>
       <tbody>
+        <!-- Iterate through list items -->
         <tr
           v-for="(item, itemIndex) in list.items"
           :key="itemIndex"
@@ -37,6 +42,7 @@
           <td>{{ item.itemName || 'Unnamed' }}</td>
           <td>{{ item.quantity }}</td>
           <td>
+            <!-- Checkbox to mark item as picked -->
             <input
               type="checkbox"
               v-model="item.picked"
@@ -44,6 +50,7 @@
             />
           </td>
           <td>
+            <!-- View/edit and delete buttons -->
             <button @click="editItem(itemIndex)" class="view-btn">View</button>
             <button @click="deleteItem(itemIndex)" class="delete-btn">Delete</button>
           </td>
@@ -51,6 +58,7 @@
       </tbody>
     </table>
 
+    <!-- Bulk delete action if items are selected -->
     <div v-if="selectedItems.length > 0" class="bulk-actions">
       <button @click="deleteSelectedItems" class="delete-btn">🗑 Delete Selected</button>
     </div>
@@ -70,13 +78,14 @@ export default {
   },
   data() {
     return {
-      showItemForm: false,
-      updatingItem: null,
-      selectedItems: [],
-      formKey: 0,
+      showItemForm: false, // Controls display of the modal
+      updatingItem: null, // Tracks index of item being edited
+      selectedItems: [], // Tracks selected checkboxes
+      formKey: 0, // Used to force re-render of the ItemForm
     };
   },
   computed: {
+    // Determines if all items are selected
     areAllSelected() {
       return (
         this.list.items.length > 0 &&
@@ -85,35 +94,42 @@ export default {
     },
   },
   methods: {
+    // Opens the item creation modal
     openModal() {
       this.updatingItem = null;
       this.showItemForm = true;
     },
+    // Closes the modal
     closeModal() {
       this.showItemForm = false;
       this.updatingItem = null;
     },
+    // Handles adding or updating an item
     handleItemSubmit(item) {
       if (this.updatingItem !== null) {
-        this.list.items.splice(this.updatingItem, 1, item);
+        this.list.items.splice(this.updatingItem, 1, item); // update existing item
       } else {
-        this.list.items.push(item);
+        this.list.items.push(item); // add new item
       }
       this.closeModal();
       this.emitUpdate();
     },
+    // Sets modal to edit mode for an item
     editItem(index) {
       this.updatingItem = index;
       this.showItemForm = true;
     },
+    // Deletes an individual item
     deleteItem(index) {
       this.list.items.splice(index, 1);
       this.emitUpdate();
     },
+    // Updates picked status of an item
     updateItemStatus(itemIndex, status) {
       this.list.items[itemIndex].picked = status;
       this.emitUpdate();
     },
+    // Deletes all selected items
     deleteSelectedItems() {
       this.list.items = this.list.items.filter(
         (item, index) => !this.selectedItems.includes(index)
@@ -121,6 +137,7 @@ export default {
       this.selectedItems = [];
       this.emitUpdate();
     },
+    // Selects or deselects all items
     toggleSelectAll() {
       if (this.selectedItems.length === this.list.items.length) {
         this.selectedItems = [];
@@ -128,6 +145,7 @@ export default {
         this.selectedItems = this.list.items.map((_, index) => index);
       }
     },
+    // Emits event to notify parent of list changes
     emitUpdate() {
       this.$emit("update-list", this.list.items);
     },
@@ -136,6 +154,7 @@ export default {
 </script>
 
 <style scoped>
+/* Container styling */
 .item-pane {
   margin-top: 1rem;
   background: var(--card-bg);
@@ -144,6 +163,7 @@ export default {
   color: var(--text-color);
 }
 
+/* Header styles */
 .item-pane h3 {
   margin-bottom: 1.25rem;
   color: var(--text-color);
@@ -154,6 +174,7 @@ export default {
   color: var(--text-color);
 }
 
+/* Add item button */
 .add-item-btn {
   background-color: #3b82f6; /* blue */
   color: white;
@@ -169,6 +190,7 @@ export default {
   background-color: #2563eb;
 }
 
+/* Modal overlay and styling */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -194,6 +216,7 @@ export default {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Form field styling */
 .modal input,
 .modal select,
 .modal textarea {
@@ -214,6 +237,7 @@ export default {
   border-color: #3b82f6;
 }
 
+/* Item table styles */
 .items-table {
   width: 100%;
   border-collapse: collapse;
@@ -234,6 +258,7 @@ export default {
   text-align: center;
 }
 
+/* Alternate row and hover styling */
 .items-table tbody tr:nth-child(odd) {
   background-color: var(--row-alt-bg);
 }
@@ -242,6 +267,7 @@ export default {
   background-color: var(--row-hover-bg);
 }
 
+/* Button styling within table */
 .items-table td button {
   padding: 0.35rem 0.75rem;
   font-size: 0.85rem;
@@ -270,6 +296,7 @@ export default {
   background-color: #dc2626;
 }
 
+/* Bulk action button */
 .bulk-actions {
   margin-top: 1rem;
 }
@@ -288,6 +315,7 @@ export default {
   background-color: #dc2626;
 }
 
+/* Styling for picked (completed) items */
 .picked td {
   text-decoration: line-through;
   color: #6b7280; /* muted gray */

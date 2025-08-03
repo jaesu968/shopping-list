@@ -12,7 +12,7 @@ A Vue 3 shopping list management application with dark/light mode toggle.
 ## How to Use
 1. Click "Create New Shopping List" and enter a name
 
-<img src="./src/assets/README%20Assets/listName.png" alt="enterListName" width="500">  
+<img src="./src/assets/README%20Assets/listName.png" alt="enterListName" width="750">  
 ![enterListName](./src/assets/README%20Assets/listName.png)
 
 3. Click "View" on a list to see its items

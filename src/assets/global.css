@@ -18,6 +18,7 @@ body.light {
   --card-bg: var(--light-card);
   --text-color: var(--light-text);
   --accent-color: var(--light-accent);
+  --row-alt-bg: #f2f2f2;
 }
 
 /* Dark mode variable overrides */
@@ -26,6 +27,7 @@ body.dark {
   --card-bg: var(--dark-card);
   --text-color: var(--dark-text);
   --accent-color: var(--dark-accent);
+  --row-alt-bg: #2c2c2c;
 }
 
 /* Base body styles */

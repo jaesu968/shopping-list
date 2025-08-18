@@ -114,3 +114,17 @@ This is a Vue App to create, update, modify and delete Shopping Lists.
 
 The views hold the UI parts and the Components hold specifc functionality.
 Example: ShoppingListView holds the main view for the app and when wanting to add items or change a list you can see the logic is in the ShoppingItem.vue file. 
+
+Setting Up The BackEnd 
+- Came across the following when using 'node server.js' the first time: 
+(node:40080) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40080) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+Server is listening on port', 8000
+Connected to MongoDB
+ - AI assistant advised to: 
+  - 1) remove deprecated MongoDB Options
+   - 2) Fix Console.log Syntax Error for listening to port console logging 
+After doing so receving the following in the terminal: 
+Server is listening on port 8000
+Connected to MongoDB

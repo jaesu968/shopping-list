@@ -49,5 +49,5 @@ app.delete('/api/items/:id', async (req, res) => {
 });  
  
  // Start the server
- const port = 8000; // desired port number of 8000
+ const port = 3000; // desired port number of 3000
  app.listen(port, () => console.log(`Server is listening on port ${port}`));

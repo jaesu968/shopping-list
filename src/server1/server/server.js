@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB configuration 
 const uri = 'mongodb://localhost:27017/shopping-list'; // MongoDB connection string
-const client = new MongoClient(uri); // Create a new MongoClient
+const client = new MongoClient(uri); // Create a new MongoClient not exact as instructions because of deprecation warning
 
 // Connect to the MongoDB server
 client.connect()

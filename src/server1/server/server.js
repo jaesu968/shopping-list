@@ -35,8 +35,8 @@ client.connect()
  app.get('/api/items', async (req, res) => {
     // insert logic here to fetch items from the database
  }); 
- // crate a new item in the database
-    app.post('/api/items', async (req, res) => {
+ // create a new item in the database
+app.post('/api/items', async (req, res) => {
         // insert logic here to create a new item in the database
 });
 // Update an existing item in the database

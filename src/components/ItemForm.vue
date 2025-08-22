@@ -3,12 +3,12 @@
         <!-- Row 1: Item Name and Quantity -->
         <div class="form-row">
             <div class="form-group">
-                <label for="itemName">Item Name:</label>
-                <input id="itemName" v-model="item.itemName" required />
+                <label for="name">Item Name:</label>
+                <input id="name" v-model="item.name" required />
             </div>
             <div class="form-group">
-                <label for="quantity">Quantity:</label>
-                <input id="quantity" v-model.number="item.quantity" required type="number" />
+                <label for="qty">Quantity:</label>
+                <input id="qty" v-model.number="item.qty" required type="number" />
             </div>
         </div>
 
@@ -68,19 +68,30 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'cancel'])
 
+// renamed form fields to match the API expectations
 const item = ref({
-    itemName: '',
-    quantity: '',
+    name: '',
+    qty: 1, // default quantity to 1
     brand: '',
     category: '',
-    price: '',
-    weight: '',
-    notes: ''
+    price: 0,
+    weight: 0,
+    notes: '',
+    checked: false // default to unchecked
 })
 
 watch(() => props.initialItem, (newItem) => {
     if (newItem) {
-        item.value = { ...newItem }
+        item.value = { 
+            name: newItem.name || '',
+            qty: newItem.qty || newItem.quantity || 1, // use qty or quantity
+            brand: newItem.brand || '',
+            category: newItem.category || '',
+            price: newItem.price || 0,
+            weight: newItem.weight || 0,
+            notes: newItem.notes || '',
+            checked: newItem.checked || false // default to unchecked
+         } // use DB field names 
     }
 }, { immediate: true })
 
@@ -98,13 +109,15 @@ function submitForm() {
     emit('submit', { ...item.value })
 
     item.value = {
-        itemName: '',
-        quantity: '',
+        // Reset form fields after submission
+        name: '',
+        qty: 1, // reset to default
         brand: '',
         category: '',
-        price: '',
-        weight: '',
-        notes: ''
+        price: 0,
+        weight: 0,
+        notes: '',
+        checked: false // reset to unchecked after submission
     }
 }
 </script>

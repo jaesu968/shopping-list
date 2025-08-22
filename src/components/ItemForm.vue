@@ -80,6 +80,7 @@ const item = ref({
     checked: false // default to unchecked
 })
 
+// Watch for initialItem prop changes to populate form fields
 watch(() => props.initialItem, (newItem) => {
     if (newItem) {
         item.value = { 

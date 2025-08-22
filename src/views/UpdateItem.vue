@@ -15,6 +15,7 @@
 
     <!-- Button to trigger the item creation modal -->
     <button class="add-item-btn" @click="openModal">➕ Add Item</button>
+    
 
     <!-- Table of items in the list -->
     <table class="items-table">
@@ -31,12 +32,12 @@
         <!-- Iterate through list items -->
         <tr v-for="(item, itemIndex) in list.items" :key="itemIndex" :class="{ picked: item.picked }">
           <td><input type="checkbox" :value="itemIndex" v-model="selectedItems" class="item-checkbox" /></td>
-          <td>{{ item.itemName || 'Unnamed' }}</td>
-          <td>{{ item.quantity }}</td>
+          <td>{{ item.name || 'Unnamed' }}</td>
+          <td>{{ item.qty || item.quantity || 1 }}</td>
           <td>
             <!-- Checkbox to mark item as picked -->
             <input type="checkbox" v-model="item.picked" @change="updateItemStatus(itemIndex, item.picked)"
-              class="item-checkbox" />
+                   class="item-checkbox" />
           </td>
           <td>
             <!-- View/edit and delete buttons -->
@@ -56,9 +57,11 @@
 
 <script>
 import ItemForm from "@/components/ItemForm.vue";
+import CreateItem from "@/views/CreateItem.vue";
+import api from "@/services/api.js";
 
 export default {
-  components: { ItemForm },
+  components: { ItemForm , CreateItem },
   props: {
     list: {
       type: Object,
@@ -76,6 +79,8 @@ export default {
   computed: {
     // Determines if all items are selected
     areAllSelected() {
+      // If no list or items, return false
+      if (!this.list || !Array.isArray(this.list.items)) return false; 
       return (
         this.list.items.length > 0 &&
         this.selectedItems.length === this.list.items.length
@@ -94,14 +99,31 @@ export default {
       this.updatingItem = null;
     },
     // Handles adding or updating an item
-    handleItemSubmit(item) {
+    async handleItemSubmit(item) {
+      try {
       if (this.updatingItem !== null) {
-        this.list.items.splice(this.updatingItem, 1, item); // update existing item
-      } else {
-        this.list.items.push(item); // add new item
-      }
+        // update existing item 
+        const itemId = this.list.items[this.updatingItem]._id;
+        await api.updateItem(this.list._id, itemId, itemId, {
+          name: item.itemName,
+          quantity: item.quantity,
+          picked: item.picked,
+        });
+        this.list.items.splice(this.this.updatingItem, 1, item); // update local array
+        } else {
+          // adding new item 
+          const response = await api.createItem(this.list._id, {
+            name: item.itemName,
+            quantity: item.quantity,
+            picked: item.picked || false,
+          });
+          this.list.items.push(response.data); // update local array
+        }
       this.closeModal();
       this.emitUpdate();
+      } catch (error) {
+        console.error("Error saving item:", error);
+      }
     },
     // Sets modal to edit mode for an item
     editItem(index) {
@@ -114,17 +136,43 @@ export default {
       this.emitUpdate();
     },
     // Updates picked status of an item
-    updateItemStatus(itemIndex, status) {
-      this.list.items[itemIndex].picked = status;
-      this.emitUpdate();
+    async updateItemStatus(itemIndex, picked) {
+      try {
+        const itemId = this.list.items[itemIndex]._id;
+        // optimistic update
+        this.list.items[itemIndex].picked = picked;
+        await api.updateItem(this.list._id, itemId, { checked: picked });
+        this.emitUpdate();
+      } catch (error) {
+        console.error("Error updating item status:", error);
+        // revert on error
+        this.list.items[itemIndex].picked = !picked;
+        // re-emit to refresh view
+        this.emitUpdate();
+      }
     },
     // Deletes all selected items
-    deleteSelectedItems() {
-      this.list.items = this.list.items.filter(
-        (item, index) => !this.selectedItems.includes(index)
-      );
-      this.selectedItems = [];
-      this.emitUpdate();
+    async deleteSelectedItems() {
+      try {
+        // get the list of item ids to delete
+        const itemIdsToDelete = this.selectedItems.map(index => this.list.items[index]._id);
+        // delete items in the backend
+        await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.list._id, itemId)));
+
+        // update the local list
+        this.list.items = this.list.items.filter((item, index) => !this.selectedItems.includes(index));
+        this.selectedItems = [];
+
+        this.emitUpdate();
+      } catch (error) {
+        console.error("Error deleting selected items:", error);
+        // show an alert, or some other user feedback
+        alert('Failed to delete selected items.');
+        // re-emit the original list to refresh the view with the original list
+        this.emitUpdate();
+        this.selectedItems = [];
+      }
+
     },
     // Selects or deselects all items
     toggleSelectAll() {
@@ -138,6 +186,11 @@ export default {
     emitUpdate() {
       this.$emit("update-list", this.list.items);
     },
+    // add item to list 
+    addItemToList() {
+      this.list.items.push(item);  // update local array with new item
+      this.emitUpdate(); // notify parent component (ShoppingListView) to update
+    }
   },
 };
 </script>

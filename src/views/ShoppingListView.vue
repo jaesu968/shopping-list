@@ -21,7 +21,7 @@
       <div v-else>
         <ul>
           <!-- Render each shopping list with actions -->
-          <li v-for="(list, index) in lists" :key="list.id" class="list-entry">
+          <li v-for="(list, index) in lists" :key="list._id" class="list-entry">
             <div class="list-row">
               <!-- Display the list name -->
               <span class="list-name">{{ list.name }}</span>
@@ -29,7 +29,7 @@
               <!-- Buttons for list actions -->
               <div class="button-group">
                 <!-- Toggles the visibility of the list's items -->
-                <button class="action-btn" @click="selectedList = selectedList === index ? null : index">
+                <button class="action-btn" @click="selectList(index)">
                   {{ selectedList === index ? "Hide" : "View" }}
                 </button>
 
@@ -55,6 +55,8 @@
 import ShoppingItem from "@/components/ShoppingItem.vue";
 import Card from "@/components/Card.vue";
 import UpdateItem from "@/views/UpdateItem.vue";
+// import the API service for backend communication
+import api from "@/services/api.js";
 
 export default {
   components: {
@@ -70,12 +72,13 @@ export default {
   },
   methods: {
     // Adds a new shopping list with a unique ID and empty items array
-    addList(listName) {
-      this.lists.push({
-        id: Date.now(),
-        name: listName,
-        items: [],
-      });
+    async addList(listName) {
+      try {
+        const response = await api.createList({ name: listName }); // Call the API to create a new list
+        this.lists.push(response.data); // Add the newly created list to the local lists array
+      } catch (error) {
+        console.error('Error creating list: ', error); // Log any errors that occur during the API call
+      }
     },
 
     // Renames the list at the given index using user input
@@ -107,7 +110,39 @@ export default {
     goHome() {
       this.selectedList = null;
     },
+
+    // fetch existing lists from the backend API 
+    async fetchLists() {
+      try { // Call the API to get all lists
+        const response = await api.getAllLists(); // Assuming response.data contains the array of lists
+        this.lists = response.data; // Update the local lists with data from the backend
+      } catch (error) { // Log any errors that occur during the API call
+        console.error('Error fetching lists: ', error); 
+      }
+    },
+    // select a list to view its items 
+    async selectList(index) {
+      this.selectedList = this.selectedList === index ? null : index;
+      // if a list is selected, fetch its items from the backend
+      if (this.selectedList !== null) {
+        // Fetch items for the selected list
+        const listId = this.lists[this.selectedList]._id;
+        // if list has no ID 
+        if (!listId) {
+          console.error('Selected list does not have a valid ID:', this.lists[this.selectedList]);
+          return;
+        }
+        const response = await api.getListItems(listId);
+        if (this.lists[this.selectedList]) {
+          this.lists[this.selectedList].items = response.data; // Update the items of the selected list
+        }
+      }
+    }
   },
+    // Lifecycle hook to fetch existing lists from the backend when the component is created
+  async mounted() {
+    await this.fetchLists(); 
+  }
 };
 </script>
 

@@ -47,11 +47,25 @@ A Vue 3 shopping list management application with dark/light mode toggle.
 
 
 ## Project Structure
-- `ShoppingListView.vue` - Main app view
-- `ShoppingItem.vue` - Create new lists component
-- `ItemForm.vue` - Add items to lists
-- `UpdateItem.vue` - Reusable update component for items
-- `Card.vue` - Layout component
+Frontend Components
+
+ShoppingListView.vue – Main app view displaying all lists.
+
+ShoppingItem.vue – Component for creating new lists.
+
+ItemForm.vue – Form for adding items to lists.
+
+UpdateItem.vue – Reusable component for updating existing items.
+
+Card.vue – Layout/styling component for list items or cards.
+
+Backend
+
+server1/Server.js – Sets up the Express server, connects to MongoDB, and defines CRUD routes for lists and items.
+
+Services
+
+services/api.js – API service that uses Axios to communicate with the backend server for performing CRUD operations.
 
 ## Development
 
@@ -129,7 +143,12 @@ After doing so receving the following in the terminal:
 Server is listening on port 8000
 Connected to MongoDB
 
-## Enviornment files
+## Server 
+Challenges: 
+- Making sure views and components line with backend was difficult 
+- However, we overcame this by making sure fields in the schema match what is happening in the front-end vue app fields
+
+## Environment files
 
 Our project uses environment variables stored in .env files. These files (.env and .env.local) must be placed in the root of the project (the same level as package.json and server/)and contain connection strings and other settings that should not be hard-coded.
 

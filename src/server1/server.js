@@ -17,7 +17,7 @@ dotenv.config()
 // intialize The Express App
 const app = express(); 
 
-// Envable Cross-Origin Resource Sharing (CORS)
+// Enable Cross-Origin Resource Sharing (CORS)
 app.use(cors());
 
 // Parse incoming request bodies in JSON format
@@ -45,12 +45,18 @@ client.connect()
         validator: {
           $jsonSchema: {
             bsonType: 'object',
-            required: ['name'],
+            required: ['name', 'listId'],
             properties: {
               name: { bsonType: 'string', description: 'required string' },
+              // this ensures that every item belongs to a specific shopping list and has a valid ObjectId
+              listId: { bsonType: 'objectId', description: 'shopping list ID'}, 
               qty: { bsonType: 'int', minimum: 1, description: 'int ≥ 1' },
               checked: { bsonType: 'bool', description: 'boolean flag' },
               notes: { bsonType: 'string', description: 'optional notes' },
+              brand: { bsonType: 'string', description: 'optional brand' },
+              category: { bsonType: 'string', description: 'optional category' },
+              price: { bsonType: 'double', description: 'optional price' },
+              weight: { bsonType: 'double', description: 'optional weight' },
               createdAt: { bsonType: 'date' },
               updatedAt: { bsonType: 'date' }
             }
@@ -62,30 +68,115 @@ client.connect()
     } else {
       console.log('ℹ️ "items" collection already exists');
     }
+    // Create lists collection with JSON schema validator
+    const listExists = await db.listCollections({ name: 'lists' }).toArray();
+    if (!listExists.length) {
+      await db.createCollection('lists', {
+        validator: {
+          $jsonSchema: {
+            bsonType: 'object',
+            required: ['name'],
+            properties: {
+              name: { bsonType: 'string', description: 'list name' },
+              createdAt: { bsonType: 'date' },
+              updatedAt: { bsonType: 'date' }
+            }
+          }
+        }
+      });
+      await db.collection('lists').createIndex({ createdAt: -1 }); // index for sorting by creation date
+      console.log('🆕 Created "lists" with validator + index');
+    } else {
+      console.log('ℹ️ "lists" collection already exists');
+    }
   })
   .catch(err => console.error(err));
 
  // Define the routes and API end points here
  // Example: app.get('/api/items' , async (req, res) => { ... });
 
- // Get all items from the database
- app.get('/api/items', async (req, res) => {
-    // insert logic here to fetch items from the database
+ // Get All Lists from the database
+ app.get('/api/lists', async (req, res) => {
+    // insert logic here to fetch lists from the database
+    const db = client.db('shopping_app'); // establish the database connection
+    const lists = db.collection('lists'); // get the lists collection
+    // Fetch all lists from the collection
+    const allLists = await lists.find({}).toArray();
+    // Send the lists as a JSON response
+    res.json(allLists);
  }); 
 
- // crate a new item in the database
-    app.post('/api/items', async (req, res) => {
+
+ // Get all items from the database
+app.get('/api/lists/:listId/items', async (req, res) => {
+    // insert logic here to fetch items from the database
+    const db = client.db('shopping_app'); // establish the database connection
+    const items = db.collection('items'); // get the items collection
+    // Fetch all items from the collection
+    // Filter items by listId to get items for a specific shopping list
+    // this uses req.params.listId to get the listId from the URL
+    // and convert it to an ObjectId for MongoDB query
+    const allItems = await items.find({ listId: new ObjectId(req.params.listId) }).toArray();
+    // Send the items as a JSON response
+    res.json(allItems);
+ }); 
+
+ // create a new shopping list in the database
+app.post('/api/lists', async (req, res) => {
+    // insert logic here to create a new shopping list in the database
+    const db = client.db('shopping_app'); // establish the database connection
+    const lists = db.collection('lists'); // get the lists collection
+    const newList = await lists.insertOne({ // insert one new list
+        name: req.body.name,
+        createdAt: new Date(),
+        updatedAt: new Date()
+    });
+    // Send the created list as a JSON response
+    res.status(201).json({ _id: newList.insertedId, name: req.body.name, createdAt: new Date(), updatedAt: new Date() }); // Return the newly created list
+});
+
+ // create a new item in the database (add an item to a specific list) 
+app.post('/api/lists/:listId/items', async (req, res) => {
         // insert logic here to create a new item in the database
+        const db = client.db('shopping_app'); // establish the database connection
+        const items = db.collection('items'); // get the items collection
+        const newItem = await items.insertOne({
+            listId: new ObjectId(req.params.listId), // use the listId from the URL
+            name: req.body.name,
+            qty: req.body.qty || 1, // default to 1 if not provided
+            checked: req.body.checked || false, // default to false if not provided
+            notes: req.body.notes || '',
+            brand: req.body.brand || '',
+            category: req.body.category || '',
+            price: req.body.price || 0,
+            weight: req.body.weight || 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+        // Send the created item as a JSON response
+        res.status(201).json({ 
+          _id: newItem.insertedId, 
+          listId: new ObjectId(req.params.listId), 
+          name: req.body.name, qty: req.body.qty || 1,
+          checked: req.body.checked || false, 
+          notes: req.body.notes || '',
+          brand: req.body.brand || '',
+          category: req.body.category || '',
+          price: req.body.price || 0,
+          weight: req.body.weight || 0, 
+          createdAt: new Date(),
+          updatedAt: new Date() 
+        }); // Return the newly created item
 });
 // Update an existing item in the database
-app.put('/api/items/:id', async (req, res) => {
+app.put('/api/lists/:id', async (req, res) => {
     // insert logic here to update an existing item in the database
 }); 
 // Delete an item from the database
-app.delete('/api/items/:id', async (req, res) => {
+app.delete('/api/lists/:id', async (req, res) => {
     // insert logic here to delete an item from the database
 });  
  
  // Start the server
- const port = 3000; // desired port number of 3000
+ const port = 8000; // desired port number of 3000
  app.listen(port, () => console.log(`Server is listening on port ${port}`));

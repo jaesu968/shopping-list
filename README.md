@@ -128,3 +128,36 @@ Connected to MongoDB
 After doing so receving the following in the terminal: 
 Server is listening on port 8000
 Connected to MongoDB
+
+## Enviornment files
+
+Our project uses environment variables stored in .env files. These files (.env and .env.local) must be placed in the root of the project (the same level as package.json and server/)and contain connection strings and other settings that should not be hard-coded.
+
+Files
+-	.env for production or when using MongoDB Atlas (cloud database)       
+-	.env.local → for local development with MongoDB installed on your computer
+
+These files are not committed to GitHub. Each developer creates their own copy.
+-	If using Atlas, update .env with the provided cluster URI.
+-	If running MongoDB locally, use .env.local.
+-	When you run the server with
+
+Example .env
+    # MongoDB Atlas connection string
+    MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/shopping_app
+
+    # Port for server
+    PORT=3000
+
+Example .env.local
+    # Local MongoDB connection string
+    MONGO_URI=mongodb://127.0.0.1:27017/shopping_app
+
+    # Port for local server
+    PORT=3000
+
+## Scripts
+- `npm run start` Runs the server in production mode  
+- `npm run dev` Runs the server with Nodemon (auto-restarts on changes)  
+- `npm run dev:atlas` Uses `.env` (Atlas connection string)  
+- `npm run dev:local` Uses `.env.local` (local MongoDB connection string)  

@@ -169,6 +169,7 @@ app.post('/api/lists/:listId/items', async (req, res) => {
         }); // Return the newly created item
 });
 // Update an existing list in the database
+// make sure to use the correct path and method (api/lists/:id with PUT)
 app.put('/api/lists/:id', async (req, res) => {
   try {
     const db = client.db('shopping_app');             
@@ -196,6 +197,7 @@ app.put('/api/lists/:id', async (req, res) => {
 });
 
 // DELETE a shopping list
+// make sure to use the correct path and method (api/lists/:id with DELETE)
 app.delete('/api/lists/:listId', async (req, res) => {
   try {
     const db = client.db('shopping_app');        
@@ -213,6 +215,43 @@ app.delete('/api/lists/:listId', async (req, res) => {
   } catch (err) {
     console.error('DELETE /api/lists/:listId error:', err);
     res.status(500).json({ error: 'Failed to delete list' });
+  }
+});
+
+// Update an item in a shopping list
+// make sure to use the correct path and method (api/lists/:listId/items/:itemId with PUT)
+// this is updating a specific item in a specific list
+app.put('/api/lists/:listId/items/:itemId', async (req, res) => {
+  try {
+    const db = client.db('shopping_app'); // establish the database connection
+    const { listId, itemId } = req.params; // get listId and itemId from the URL
+    // validate the IDs
+    if (!ObjectId.isValid(listId) || !ObjectId.isValid(itemId)) {
+      return res.status(400).json({ error: 'Invalid ID' });
+    }
+    // extract fields to update from the request body
+    const { name, quantity, picked } = req.body;
+    const updatedFields = { updatedAt: new Date() };
+    // only include fields that are provided in the request
+    if (name) updatedFields.name = name;
+    if (quantity) updatedFields.qty = quantity;
+    if (typeof picked === 'boolean') updatedFields.checked = picked;
+
+    // update the item in the database
+    const result = await db.collection('items').updateOne(
+      { _id: new ObjectId(itemId), listId: new ObjectId(listId) },
+      { $set: updatedFields }
+    );
+    // check if the item was found and updated
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    // fetch and return the updated item
+    const updatedItem = await db.collection('items').findOne({ _id: new ObjectId(itemId) });
+    res.json(updatedItem);
+  } catch (err) {
+    console.error('PUT /api/lists/:listId/items/:itemId error:', err);
+    res.status(500).json({ error: 'Failed to update item' });
   }
 });
  

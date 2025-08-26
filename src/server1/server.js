@@ -217,6 +217,28 @@ app.delete('/api/lists/:listId', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete list' });
   }
 });
+// DELETE a specific item from a shopping list
+// make sure to use the correct path and method (api/lists/:listId/items/:itemId with DELETE)
+app.delete('/api/lists/:listId/items/:itemId', async (req, res) => {
+  try {
+    const db = client.db('shopping_app'); // establish the database connection
+    const { listId, itemId } = req.params; // get listId and itemId from the URL
+    // validate the IDs
+    if (!ObjectId.isValid(listId) || !ObjectId.isValid(itemId)) {
+      return res.status(400).json({ error: 'Invalid ID' });
+    }
+    // delete the item from the database
+    const result = await db.collection('items').deleteOne({ _id: new ObjectId(itemId), listId: new ObjectId(listId) });
+    // check if the item was found and deleted
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    res.json({ message: 'Item deleted' });
+  } catch (err) {
+    console.error('DELETE /api/lists/:listId/items/:itemId error:', err);
+    res.status(500).json({ error: 'Failed to delete item' });
+  }
+});
 
 // Update an item in a shopping list
 // make sure to use the correct path and method (api/lists/:listId/items/:itemId with PUT)
@@ -230,12 +252,12 @@ app.put('/api/lists/:listId/items/:itemId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid ID' });
     }
     // extract fields to update from the request body
-    const { name, quantity, picked } = req.body;
+    const { name, qty, checked } = req.body;
     const updatedFields = { updatedAt: new Date() };
     // only include fields that are provided in the request
     if (name) updatedFields.name = name;
-    if (quantity) updatedFields.qty = quantity;
-    if (typeof picked === 'boolean') updatedFields.checked = picked;
+    if (qty) updatedFields.qty = qty;
+    if (typeof checked === 'boolean') updatedFields.checked = checked;
 
     // update the item in the database
     const result = await db.collection('items').updateOne(

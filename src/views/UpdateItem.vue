@@ -104,7 +104,8 @@ export default {
       if (this.updatingItem !== null) {
         // update existing item 
         const itemId = this.list.items[this.updatingItem]._id;
-        await api.updateItem(this.list._id, itemId, itemId, {
+        // make sure API call uses correct parameters (3 args: listId, itemId, updateData)
+        await api.updateItem(this.list._id, itemId, {
           //  keep this consistent with backend field names
           name: item.name,
           quantity: item.qty,
@@ -141,9 +142,9 @@ export default {
     async updateItemStatus(itemIndex, picked) {
       try {
         const itemId = this.list.items[itemIndex]._id;
-        // optimistic update
+        // optimistically update UI , make sure to use correct field name: picked
         this.list.items[itemIndex].picked = picked;
-        await api.updateItem(this.list._id, itemId, { checked: picked });
+        await api.updateItem(this.list._id, itemId, { picked: picked });
         this.emitUpdate();
       } catch (error) {
         console.error("Error updating item status:", error);

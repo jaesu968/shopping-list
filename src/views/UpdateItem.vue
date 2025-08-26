@@ -105,16 +105,18 @@ export default {
         // update existing item 
         const itemId = this.list.items[this.updatingItem]._id;
         await api.updateItem(this.list._id, itemId, itemId, {
-          name: item.itemName,
-          quantity: item.quantity,
+          //  keep this consistent with backend field names
+          name: item.name,
+          quantity: item.qty,
           picked: item.picked,
         });
-        this.list.items.splice(this.this.updatingItem, 1, item); // update local array
+        this.list.items.splice(this.updatingItem, 1, item); // update local array
         } else {
           // adding new item 
           const response = await api.createItem(this.list._id, {
-            name: item.itemName,
-            quantity: item.quantity,
+            // keep this consistent with backend field names
+            name: item.name,
+            quantity: item.qty,
             picked: item.picked || false,
           });
           this.list.items.push(response.data); // update local array

@@ -96,7 +96,9 @@ export default {
       try { // try to fetch list data
         const listId = this.$route.params.id; // get list ID from route params
         const response = await api.getList(listId); // fetch list from API
-        this.internalList = response.data; // store fetched list
+        if (response.data.success) {
+          this.internalList = response.data.data; // store fetched list
+        }
       } catch (error) { // handle errors
         console.error("Failed to fetch list:", error);
         // Optionally, redirect to a not-found page or show an error message
@@ -120,13 +122,17 @@ export default {
         if (this.updatingItem !== null) {
           // Update existing item
           const itemId = this.displayList.items[this.updatingItem]._id;
-          const updatedItem = await api.updateItem(this.displayList._id, itemId, item);
+          const response = await api.updateItem(this.displayList._id, itemId, item);
           // Replace the old item with the updated one from the server's response
-          this.displayList.items.splice(this.updatingItem, 1, updatedItem.data);
+          if (response.data.success) {
+            this.displayList.items.splice(this.updatingItem, 1, response.data.data);
+          }
         } else {
           // Add new item
           const response = await api.createItem(this.displayList._id, item);
-          this.displayList.items.push(response.data);
+          if (response.data.success) {
+            this.displayList.items.push(response.data.data);
+          }
         }
         this.closeModal();
         this.emitUpdate();

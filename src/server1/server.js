@@ -135,7 +135,7 @@ app.get('/api/lists/:id', async (req, res) => {
       return res.status(404).json({ error: 'List not found' });
     }
     list.items = await getDB().collection('items').find({ listId: new ObjectId(id) }).toArray();
-    res.json(list);
+    res.json({ success: true, data: list });
   } catch (err) {
     console.error('GET /api/lists/:id error:', err);
     res.status(500).json({ error: 'Failed to fetch list' });

@@ -75,7 +75,9 @@ export default {
     async addList(listName) {
       try {
         const response = await api.createList({ name: listName }); // Call the API to create a new list
-        this.lists.push(response.data); // Add the newly created list to the local lists array
+        if (response.data.success) {
+          this.lists.push(response.data.data); // Add the newly created list to the local lists array
+        }
       } catch (error) {
         console.error('Error creating list: ', error); // Log any errors that occur during the API call
       }
@@ -92,8 +94,10 @@ export default {
       if (!newName || newName.trim() === current.name) return;
       try {
       // call backend API to update list in DB
-       const { data } = await api.updateList(current._id, { name: newName.trim() });
-       this.lists[index] = data;
+       const response = await api.updateList(current._id, { name: newName.trim() });
+       if (response.data.success) {
+         this.lists[index] = response.data.data;
+       }
     } catch (err) {
         console.error('Error renaming list:', err);
         alert('Rename failed.');
@@ -145,7 +149,9 @@ export default {
     async fetchLists() {
       try { // Call the API to get all lists
         const response = await api.getAllLists(); // Assuming response.data contains the array of lists
-        this.lists = response.data; // Update the local lists with data from the backend
+        if (response.data.success) {
+          this.lists = response.data.data; // Update the local lists with data from the backend
+        }
       } catch (error) { // Log any errors that occur during the API call
         console.error('Error fetching lists: ', error); 
       }
@@ -163,8 +169,8 @@ export default {
           return;
         }
         const response = await api.getListItems(listId);
-        if (this.lists[this.selectedList]) {
-          this.lists[this.selectedList].items = response.data; // Update the items of the selected list
+        if (this.lists[this.selectedList] && response.data.success) {
+          this.lists[this.selectedList].items = response.data.data; // Update the items of the selected list
         }
       }
     }

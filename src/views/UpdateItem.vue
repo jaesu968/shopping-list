@@ -24,19 +24,19 @@
           <th><input type="checkbox" :checked="areAllSelected" @change="toggleSelectAll" class="item-checkbox" /></th>
           <th>Name</th>
           <th>Quantity</th>
-          <th>Picked</th>
+          <th>Checked</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <!-- Iterate through list items -->
-        <tr v-for="(item, itemIndex) in list.items" :key="itemIndex" :class="{ picked: item.picked }">
+        <tr v-for="(item, itemIndex) in list.items" :key="itemIndex" :class="{ picked: item.checked }">
           <td><input type="checkbox" :value="itemIndex" v-model="selectedItems" class="item-checkbox" /></td>
           <td>{{ item.name || 'Unnamed' }}</td>
           <td>{{ item.qty || item.quantity || 1 }}</td>
           <td>
             <!-- Checkbox to mark item as picked -->
-            <input type="checkbox" v-model="item.picked" @change="updateItemStatus(itemIndex, item.picked)"
+            <input type="checkbox" v-model="item.checked" @change="updateItemStatus(itemIndex, item.checked)"
                    class="item-checkbox" />
           </td>
           <td>
@@ -109,7 +109,7 @@ export default {
           //  keep this consistent with backend field names
           name: item.name,
           quantity: item.qty,
-          picked: item.picked,
+          checked: item.checked,
         });
         this.list.items.splice(this.updatingItem, 1, item); // update local array
         } else {
@@ -118,7 +118,7 @@ export default {
             // keep this consistent with backend field names
             name: item.name,
             quantity: item.qty,
-            picked: item.picked || false,
+            checked: item.checked || false,
           });
           this.list.items.push(response.data); // update local array
         }
@@ -155,17 +155,17 @@ export default {
       }
     },
     // Updates picked status of an item
-    async updateItemStatus(itemIndex, picked) {
+    async updateItemStatus(itemIndex, checked) {
       try {
         const itemId = this.list.items[itemIndex]._id;
-        // optimistically update UI , make sure to use correct field name: picked
-        this.list.items[itemIndex].picked = picked;
-        await api.updateItem(this.list._id, itemId, { picked: picked });
+        // optimistically update UI , make sure to use correct field name: checked
+        this.list.items[itemIndex].checked = checked;
+        await api.updateItem(this.list._id, itemId, { checked: checked });
         this.emitUpdate();
       } catch (error) {
         console.error("Error updating item status:", error);
         // revert on error
-        this.list.items[itemIndex].picked = !picked;
+        this.list.items[itemIndex].checked = !checked;
         // re-emit to refresh view
         this.emitUpdate();
       }

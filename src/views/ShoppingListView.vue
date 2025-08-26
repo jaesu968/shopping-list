@@ -82,32 +82,62 @@ export default {
     },
 
     // Renames the list at the given index using user input
-    renameList(index) {
-      const newName = prompt("Enter new list name:", this.lists[index].name);
-      if (newName) this.lists[index].name = newName;
+    async renameList(index) {
+    // get the current list from local state
+    const current = this.lists[index];
+    // ask user for new name
+    const newName = prompt('Enter new list name:', current.name);
+
+    // if user cancels or enters the same name, do nothing
+      if (!newName || newName.trim() === current.name) return;
+      try {
+      // call backend API to update list in DB
+       const { data } = await api.updateList(current._id, { name: newName.trim() });
+       this.lists[index] = data;
+    } catch (err) {
+        console.error('Error renaming list:', err);
+        alert('Rename failed.');
+    }
     },
 
     // Deletes the list at the given index after user confirmation
-    deleteList(index) {
-      if (confirm("Are you sure you want to delete this list?")) {
-        this.lists.splice(index, 1);
+    async deleteList(index) {
+  // get the current list from local state
+  const current = this.lists[index];
 
-        // Deselect the list if the deleted one was currently selected
-        if (this.selectedList === index) {
-          this.selectedList = null;
-        }
-      }
+  // confirm with user before deleting
+  if (!confirm(`Delete "${current.name}"?`)) return;
+
+  try {
+    // call backend API to delete from DB
+    await api.deleteList(current._id);
+
+    // remove from local state so UI updates
+    this.lists.splice(index, 1);
+
+    // reset selectedList if deleted one was selected
+    if (this.selectedList === index) this.selectedList = null;
+
+    // if you deleted an earlier index, adjust selection index
+    if (this.selectedList !== null && index < this.selectedList) {
+      this.selectedList -= 1;
+    }
+
+  } catch (err) {
+    console.error('Error deleting list:', err);
+    alert('Delete failed.');
+  }
     },
 
     // Updates the items of the currently selected list
-    updateListItems(updatedItems) {
-      if (this.selectedList !== null) {
-        this.lists[this.selectedList].items = updatedItems;
-      }
+      updateListItems(updatedItems) {
+        if (this.selectedList !== null) {
+      this.lists[this.selectedList].items = updatedItems;
+    }
     },
 
     // Clears the selected list to return to the main app view
-    goHome() {
+      goHome() {
       this.selectedList = null;
     },
 

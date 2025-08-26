@@ -19,41 +19,43 @@ const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shopping-list';
 const client = new MongoClient(uri);
 
 async function initDB() {
-  await client.connect();
-  console.log('Connected to MongoDB');
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB');
 
-  const db = client.db('shopping_app');
+    const db = client.db('shopping_app');
 
-  // Create 'items' collection if not exists
-  const itemsExists = await db.listCollections({ name: 'items' }).toArray();
-  if (!itemsExists.length) {
-    await db.createCollection('items', {
-      validator: {
-        $jsonSchema: {
-          bsonType: 'object',
-          required: ['name', 'listId'],
-          properties: {
-            name: { bsonType: 'string', description: 'required string' },
-            listId: { bsonType: 'objectId', description: 'shopping list ID' },
-            qty: { bsonType: 'int', minimum: 1 },
-            checked: { bsonType: 'bool' },
-            notes: { bsonType: 'string' },
-            brand: { bsonType: 'string' },
-            category: { bsonType: 'string' },
-            price: { bsonType: 'double' },
-            weight: { bsonType: 'double' },
-            createdAt: { bsonType: 'date' },
-            updatedAt: { bsonType: 'date' }
+    // Create 'items' collection if not exists
+    const itemsExists = await db.listCollections({ name: 'items' }).toArray();
+    if (!itemsExists.length) {
+      await db.createCollection('items', {
+        validator: {
+          $jsonSchema: {
+            bsonType: 'object',
+            required: ['name', 'listId'],
+            properties: {
+              name: { bsonType: 'string', description: 'required string' },
+              listId: { bsonType: 'objectId', description: 'shopping list ID' },
+              qty: { bsonType: 'int', minimum: 1 },
+              checked: { bsonType: 'bool' },
+              notes: { bsonType: 'string' },
+              brand: { bsonType: 'string' },
+              category: { bsonType: 'string' },
+              price: { bsonType: 'double' },
+              weight: { bsonType: 'double' },
+              createdAt: { bsonType: 'date' },
+              updatedAt: { bsonType: 'date' }
+            }
           }
         }
-<<<<<<< HEAD
       });
       await db.collection('items').createIndex({ createdAt: -1 });
       console.log('🆕 Created "items" with validator + index');
     } else {
       console.log('ℹ️ "items" collection already exists');
     }
-    // Create lists collection with JSON schema validator
+
+    // Create 'lists' collection if not exists
     const listExists = await db.listCollections({ name: 'lists' }).toArray();
     if (!listExists.length) {
       await db.createCollection('lists', {
@@ -69,107 +71,18 @@ async function initDB() {
           }
         }
       });
-      await db.collection('lists').createIndex({ createdAt: -1 }); // index for sorting by creation date
+      await db.collection('lists').createIndex({ createdAt: -1 });
       console.log('🆕 Created "lists" with validator + index');
     } else {
       console.log('ℹ️ "lists" collection already exists');
     }
-  })
-  .catch(err => console.error(err));
-
- // Define the routes and API end points here
- // Example: app.get('/api/items' , async (req, res) => { ... });
-
- // Get All Lists from the database
- app.get('/api/lists', async (req, res) => {
-    // insert logic here to fetch lists from the database
-    const db = client.db('shopping_app'); // establish the database connection
-    const lists = db.collection('lists'); // get the lists collection
-    // Fetch all lists from the collection
-    const allLists = await lists.find({}).toArray();
-    // Send the lists as a JSON response
-    res.json(allLists);
- }); 
-
- // Get a single list by its ID
- app.get('/api/lists/:id', async (req, res) => {
-  try {
-    const db = client.db('shopping_app'); // establish the database connection
-    const { id } = req.params; // get the list ID from the URL
-
-    if (!ObjectId.isValid(id)) { // validate the ID
-      return res.status(400).json({ error: 'Invalid list ID' });
-    }
-    // fetch the list from the database
-    const list = await db.collection('lists').findOne({ _id: new ObjectId(id) });
-    // if no list found, return 404
-    if (!list) {
-      return res.status(404).json({ error: 'List not found' });
-    }
-
-    // also fetch the items for that list
-    list.items = await db.collection('items').find({ listId: new ObjectId(id) }).toArray();
-
-    res.json(list);
   } catch (err) {
-    console.error('GET /api/lists/:id error:', err);
-    res.status(500).json({ error: 'Failed to fetch list' });
-  }
-});
-
-
- // Get all items from the database
-app.get('/api/lists/:listId/items', async (req, res) => {
-    // insert logic here to fetch items from the database
-    const db = client.db('shopping_app'); // establish the database connection
-    const items = db.collection('items'); // get the items collection
-    // Fetch all items from the collection
-    // Filter items by listId to get items for a specific shopping list
-    // this uses req.params.listId to get the listId from the URL
-    // and convert it to an ObjectId for MongoDB query
-    const allItems = await items.find({ listId: new ObjectId(req.params.listId) }).toArray();
-    // Send the items as a JSON response
-    res.json(allItems);
- }); 
-
- // create a new shopping list in the database
-app.post('/api/lists', async (req, res) => {
-    // insert logic here to create a new shopping list in the database
-    const db = client.db('shopping_app'); // establish the database connection
-    const lists = db.collection('lists'); // get the lists collection
-    const newList = await lists.insertOne({ // insert one new list
-        name: req.body.name,
-        createdAt: new Date(),
-        updatedAt: new Date()
-=======
-      }
->>>>>>> f638ef53f2274fcadce8c77c7d1dab1c0905da81
-    });
-    await db.collection('items').createIndex({ createdAt: -1 });
-    console.log('🆕 Created "items" collection');
-  }
-
-  // Create 'lists' collection if not exists
-  const listsExists = await db.listCollections({ name: 'lists' }).toArray();
-  if (!listsExists.length) {
-    await db.createCollection('lists', {
-      validator: {
-        $jsonSchema: {
-          bsonType: 'object',
-          required: ['name'],
-          properties: {
-            name: { bsonType: 'string' },
-            createdAt: { bsonType: 'date' },
-            updatedAt: { bsonType: 'date' }
-          }
-        }
-      }
-    });
-    await db.collection('lists').createIndex({ createdAt: -1 });
-    console.log('🆕 Created "lists" collection');
+    console.error("Failed to initialize database:", err);
+    process.exit(1);
   }
 }
-initDB().catch(err => console.error(err));
+
+initDB();
 
 // ------------------ Middleware ------------------
 
@@ -207,6 +120,25 @@ app.get('/api/lists', async (req, res) => {
     res.json({ success: true, data: lists });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to fetch lists' });
+  }
+});
+
+// Get a single list by its ID
+app.get('/api/lists/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid list ID' });
+    }
+    const list = await getDB().collection('lists').findOne({ _id: new ObjectId(id) });
+    if (!list) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+    list.items = await getDB().collection('items').find({ listId: new ObjectId(id) }).toArray();
+    res.json(list);
+  } catch (err) {
+    console.error('GET /api/lists/:id error:', err);
+    res.status(500).json({ error: 'Failed to fetch list' });
   }
 });
 
@@ -266,17 +198,8 @@ app.delete('/api/lists/:listId', async (req, res) => {
 // Get items in a list
 app.get('/api/lists/:listId/items', async (req, res) => {
   try {
-<<<<<<< HEAD
-    const db = client.db('shopping_app'); // establish the database connection
-    const { listId, itemId } = req.params; // get listId and itemId from the URL
-    // validate the IDs
-    if (!ObjectId.isValid(listId) || !ObjectId.isValid(itemId)) {
-      return res.status(400).json({ error: 'Invalid ID' });
-    }
-    // extract fields to update from the request body
-    const { name, qty, checked, brand, category, price, weight, notes } = req.body;
-=======
     const { listId } = req.params;
+    if (!ObjectId.isValid(listId)) return res.status(400).json({ success: false, error: 'Invalid list id' });
     const items = await getDB().collection('items').find({ listId: new ObjectId(listId) }).toArray();
     res.json({ success: true, data: items });
   } catch (err) {
@@ -289,6 +212,8 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
   try {
     const db = getDB();
     const { listId } = req.params;
+    if (!ObjectId.isValid(listId)) return res.status(400).json({ success: false, error: 'Invalid list id' });
+
     const newItem = await db.collection('items').insertOne({
       listId: new ObjectId(listId),
       name: req.body.name,
@@ -302,7 +227,7 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
       createdAt: new Date(),
       updatedAt: new Date()
     });
-    res.status(201).json({ success: true, data: { _id: newItem.insertedId, name: req.body.name } });
+    res.status(201).json({ success: true, data: { _id: newItem.insertedId, ...req.body } });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to create item' });
   }
@@ -315,8 +240,7 @@ app.put('/api/lists/:listId/items/:itemId', validateItem, handleValidationErrors
     const { listId, itemId } = req.params;
     if (!ObjectId.isValid(listId) || !ObjectId.isValid(itemId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
-    const { name, qty, checked } = req.body;
->>>>>>> f638ef53f2274fcadce8c77c7d1dab1c0905da81
+    const { name, qty, checked, brand, category, price, weight, notes } = req.body;
     const updatedFields = { updatedAt: new Date() };
     if (name) updatedFields.name = name;
     if (qty) updatedFields.qty = qty;

@@ -145,8 +145,8 @@ Connected to MongoDB
 
 ## Server 
 Challenges: 
-- Making sure views and components line with backend was difficult 
-- However, we overcame this by making sure fields in the schema match what is happening in the front-end vue app fields
+- Making sure views and components line with backend was difficult. 
+- However, we overcame this by making sure fields in the schema match what is happening in the front-end vue app fields. 
 
 ## Environment files
 
@@ -176,7 +176,7 @@ Example .env.local
     PORT=3000
 
 ## Scripts
-- `npm run start` Runs the server in production mode  
-- `npm run dev` Runs the server with Nodemon (auto-restarts on changes)  
+- `npm run start` Runs the server in production mode  (use this when inside the server1 folder on the terminal)
+- `npm run dev` Runs the server with Nodemon (auto-restarts on changes)  - use this at the base level of the project folder
 - `npm run dev:atlas` Uses `.env` (Atlas connection string)  
 - `npm run dev:local` Uses `.env.local` (local MongoDB connection string)  

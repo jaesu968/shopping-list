@@ -13,6 +13,7 @@ const API_BASE_URL = 'http://localhost:8000/api'
 const api = {
   // Shopping Lists
   getAllLists: () => axios.get(`${API_BASE_URL}/lists`),
+  getList: (id) => axios.get(`${API_BASE_URL}/lists/${id}`),
   createList: (listData) => axios.post(`${API_BASE_URL}/lists`, listData),
   //Adding Update and Delete functionality
   updateList: (id, listData) => axios.put(`${API_BASE_URL}/lists/${id}`, listData),

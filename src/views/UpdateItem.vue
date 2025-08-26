@@ -134,9 +134,25 @@ export default {
       this.showItemForm = true;
     },
     // Deletes an individual item
-    deleteItem(index) {
-      this.list.items.splice(index, 1);
-      this.emitUpdate();
+    async deleteItem(index) {
+      try {
+        // get the item ID to delete from the list
+        const itemId = this.list.items[index]._id;
+        // call backend API to delete the item
+        await api.deleteItem(this.list._id, itemId);
+        // remove from local state so UI updates
+        this.list.items.splice(index, 1);
+        // also remove from selectedItems if it was selected
+        this.selectedItems = this.selectedItems.filter(i => i !== index);
+        // re-emit to refresh view
+        this.emitUpdate();
+        // if you deleted an earlier index, adjust selectedItems indices
+        this.selectedItems = this.selectedItems.map(i => (i > index ? i - 1 : i));
+        // catch and log any errors
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        alert('Failed to delete item.');
+      }
     },
     // Updates picked status of an item
     async updateItemStatus(itemIndex, picked) {

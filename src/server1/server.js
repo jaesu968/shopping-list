@@ -106,6 +106,32 @@ client.connect()
     res.json(allLists);
  }); 
 
+ // Get a single list by its ID
+ app.get('/api/lists/:id', async (req, res) => {
+  try {
+    const db = client.db('shopping_app'); // establish the database connection
+    const { id } = req.params; // get the list ID from the URL
+
+    if (!ObjectId.isValid(id)) { // validate the ID
+      return res.status(400).json({ error: 'Invalid list ID' });
+    }
+    // fetch the list from the database
+    const list = await db.collection('lists').findOne({ _id: new ObjectId(id) });
+    // if no list found, return 404
+    if (!list) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+
+    // also fetch the items for that list
+    list.items = await db.collection('items').find({ listId: new ObjectId(id) }).toArray();
+
+    res.json(list);
+  } catch (err) {
+    console.error('GET /api/lists/:id error:', err);
+    res.status(500).json({ error: 'Failed to fetch list' });
+  }
+});
+
 
  // Get all items from the database
 app.get('/api/lists/:listId/items', async (req, res) => {
@@ -252,12 +278,17 @@ app.put('/api/lists/:listId/items/:itemId', async (req, res) => {
       return res.status(400).json({ error: 'Invalid ID' });
     }
     // extract fields to update from the request body
-    const { name, qty, checked } = req.body;
+    const { name, qty, checked, brand, category, price, weight, notes } = req.body;
     const updatedFields = { updatedAt: new Date() };
     // only include fields that are provided in the request
     if (name) updatedFields.name = name;
     if (qty) updatedFields.qty = qty;
     if (typeof checked === 'boolean') updatedFields.checked = checked;
+    if (brand) updatedFields.brand = brand;
+    if (category) updatedFields.category = category;
+    if (price) updatedFields.price = price;
+    if (weight) updatedFields.weight = weight;
+    if (notes) updatedFields.notes = notes;
 
     // update the item in the database
     const result = await db.collection('items').updateOne(

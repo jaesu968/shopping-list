@@ -147,6 +147,8 @@ Connected to MongoDB
 Challenges: 
 - Making sure views and components line with backend was difficult. 
 - However, we overcame this by making sure fields in the schema match what is happening in the front-end vue app fields. 
+To Start The Server: 
+- Navigate to src and then server1 and run the command: npm run start
 
 ## Environment files
 

@@ -14,11 +14,19 @@ const api = {
   // Shopping Lists
   getAllLists: () => axios.get(`${API_BASE_URL}/lists`),
   createList: (listData) => axios.post(`${API_BASE_URL}/lists`, listData),
-  
+  //Adding Update and Delete functionality
+  updateList: (id, listData) => axios.put(`${API_BASE_URL}/lists/${id}`, listData),
+  deleteList: (id) => axios.delete(`${API_BASE_URL}/lists/${id}`),
+
+
   // Items
   getListItems: (listId) => axios.get(`${API_BASE_URL}/lists/${listId}/items`),
-  createItem: (listId, itemData) => axios.post(`${API_BASE_URL}/lists/${listId}/items`, itemData)
-
+  createItem: (listId, itemData) => axios.post(`${API_BASE_URL}/lists/${listId}/items`, itemData),
+  //Adding update and delete
+  updateItem: (listId, itemId, itemData) =>
+    axios.put(`${API_BASE_URL}/lists/${listId}/items/${itemId}`, itemData),
+  deleteItem: (listId, itemId) =>
+    axios.delete(`${API_BASE_URL}/lists/${listId}/items/${itemId}`)
 }
 
 export default api

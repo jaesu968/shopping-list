@@ -168,14 +168,53 @@ app.post('/api/lists/:listId/items', async (req, res) => {
           updatedAt: new Date() 
         }); // Return the newly created item
 });
-// Update an existing item in the database
+// Update an existing list in the database
 app.put('/api/lists/:id', async (req, res) => {
-    // insert logic here to update an existing item in the database
-}); 
-// Delete an item from the database
-app.delete('/api/lists/:id', async (req, res) => {
-    // insert logic here to delete an item from the database
-});  
+  try {
+    const db = client.db('shopping_app');             
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid list id' });
+    }
+
+    const result = await db.collection('lists').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { name: req.body.name, updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+
+    const updated = await db.collection('lists').findOne({ _id: new ObjectId(id) });
+    res.json(updated);
+  } catch (err) {
+    console.error('PUT /api/lists/:id error:', err);
+    res.status(500).json({ error: 'Failed to update list' });
+  }
+});
+
+// DELETE a shopping list
+app.delete('/api/lists/:listId', async (req, res) => {
+  try {
+    const db = client.db('shopping_app');        
+    const { listId } = req.params;
+
+    if (!ObjectId.isValid(listId)) {
+      return res.status(400).json({ error: 'Invalid list id' });
+    }
+
+    const result = await db.collection('lists').deleteOne({ _id: new ObjectId(listId) });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+    res.json({ message: 'List deleted' });
+  } catch (err) {
+    console.error('DELETE /api/lists/:listId error:', err);
+    res.status(500).json({ error: 'Failed to delete list' });
+  }
+});
  
  // Start the server
  const port = 8000; // desired port number of 3000

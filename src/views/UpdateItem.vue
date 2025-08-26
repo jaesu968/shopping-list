@@ -1,14 +1,14 @@
 <template>
-  <div class="item-pane">
+  <div class="item-pane" v-if="displayList">
     <!-- Header displaying the name of the current list -->
     <h3>
-      Items in <strong>{{ list.name?.trim() || 'Unnamed List' }}</strong>
+      Items in <strong>{{ displayList.name?.trim() || 'Unnamed List' }}</strong>
     </h3>
 
     <!-- Modal form for adding or updating an item -->
     <div v-if="showItemForm" class="modal-overlay">
       <div class="modal">
-        <ItemForm :key="formKey" :initialItem="updatingItem !== null ? list.items[updatingItem] : null"
+        <ItemForm :key="formKey" :initialItem="updatingItem !== null ? displayList.items[updatingItem] : null"
           @submit="handleItemSubmit" @cancel="closeModal" />
       </div>
     </div>
@@ -30,7 +30,7 @@
       </thead>
       <tbody>
         <!-- Iterate through list items -->
-        <tr v-for="(item, itemIndex) in list.items" :key="itemIndex" :class="{ picked: item.checked }">
+        <tr v-for="(item, itemIndex) in displayList.items" :key="itemIndex" :class="{ picked: item.checked }">
           <td><input type="checkbox" :value="itemIndex" v-model="selectedItems" class="item-checkbox" /></td>
           <td>{{ item.name || 'Unnamed' }}</td>
           <td>{{ item.qty || item.quantity || 1 }}</td>
@@ -65,11 +65,12 @@ export default {
   props: {
     list: {
       type: Object,
-      required: true,
+      required: false, // No longer required, as it can be fetched
     },
   },
   data() {
     return {
+      internalList: null, // To hold fetched list data
       showItemForm: false, // Controls display of the modal
       updatingItem: null, // Tracks index of item being edited
       selectedItems: [], // Tracks selected checkboxes
@@ -77,15 +78,30 @@ export default {
     };
   },
   computed: {
+    displayList() {
+      return this.list || this.internalList;
+    },
     // Determines if all items are selected
     areAllSelected() {
-      // If no list or items, return false
-      if (!this.list || !Array.isArray(this.list.items)) return false; 
+      if (!this.displayList || !Array.isArray(this.displayList.items)) return false; 
       return (
-        this.list.items.length > 0 &&
-        this.selectedItems.length === this.list.items.length
+        this.displayList.items.length > 0 &&
+        this.selectedItems.length === this.displayList.items.length
       );
     },
+  },
+  // Fetches list data if not provided via props
+  async created() {
+    if (!this.list) { // only fetch if not provided
+      try { // try to fetch list data
+        const listId = this.$route.params.id; // get list ID from route params
+        const response = await api.getList(listId); // fetch list from API
+        this.internalList = response.data; // store fetched list
+      } catch (error) { // handle errors
+        console.error("Failed to fetch list:", error);
+        // Optionally, redirect to a not-found page or show an error message
+      }
+    }
   },
   methods: {
     // Opens the item creation modal
@@ -101,29 +117,19 @@ export default {
     // Handles adding or updating an item
     async handleItemSubmit(item) {
       try {
-      if (this.updatingItem !== null) {
-        // update existing item 
-        const itemId = this.list.items[this.updatingItem]._id;
-        // make sure API call uses correct parameters (3 args: listId, itemId, updateData)
-        await api.updateItem(this.list._id, itemId, {
-          //  keep this consistent with backend field names
-          name: item.name,
-          quantity: item.qty,
-          checked: item.checked,
-        });
-        this.list.items.splice(this.updatingItem, 1, item); // update local array
+        if (this.updatingItem !== null) {
+          // Update existing item
+          const itemId = this.displayList.items[this.updatingItem]._id;
+          const updatedItem = await api.updateItem(this.displayList._id, itemId, item);
+          // Replace the old item with the updated one from the server's response
+          this.displayList.items.splice(this.updatingItem, 1, updatedItem.data);
         } else {
-          // adding new item 
-          const response = await api.createItem(this.list._id, {
-            // keep this consistent with backend field names
-            name: item.name,
-            quantity: item.qty,
-            checked: item.checked || false,
-          });
-          this.list.items.push(response.data); // update local array
+          // Add new item
+          const response = await api.createItem(this.displayList._id, item);
+          this.displayList.items.push(response.data);
         }
-      this.closeModal();
-      this.emitUpdate();
+        this.closeModal();
+        this.emitUpdate();
       } catch (error) {
         console.error("Error saving item:", error);
       }
@@ -136,58 +142,43 @@ export default {
     // Deletes an individual item
     async deleteItem(index) {
       try {
-        // get the item ID to delete from the list
-        const itemId = this.list.items[index]._id;
-        // call backend API to delete the item
-        await api.deleteItem(this.list._id, itemId);
-        // remove from local state so UI updates
-        this.list.items.splice(index, 1);
-        // also remove from selectedItems if it was selected
+        const itemId = this.displayList.items[index]._id;
+        await api.deleteItem(this.displayList._id, itemId);
+        this.displayList.items.splice(index, 1);
         this.selectedItems = this.selectedItems.filter(i => i !== index);
-        // re-emit to refresh view
         this.emitUpdate();
-        // if you deleted an earlier index, adjust selectedItems indices
         this.selectedItems = this.selectedItems.map(i => (i > index ? i - 1 : i));
-        // catch and log any errors
       } catch (error) {
         console.error("Error deleting item:", error);
         alert('Failed to delete item.');
       }
     },
-    // Updates picked status of an item
+    // Updates item status
     async updateItemStatus(itemIndex, checked) {
       try {
-        const itemId = this.list.items[itemIndex]._id;
-        // optimistically update UI , make sure to use correct field name: checked
-        this.list.items[itemIndex].checked = checked;
-        await api.updateItem(this.list._id, itemId, { checked: checked });
+        const item = this.displayList.items[itemIndex];
+        const itemId = item._id;
+        item.checked = checked;
+        await api.updateItem(this.displayList._id, itemId, { checked: checked });
         this.emitUpdate();
       } catch (error) {
         console.error("Error updating item status:", error);
-        // revert on error
-        this.list.items[itemIndex].checked = !checked;
-        // re-emit to refresh view
+        // Revert on error
+        this.displayList.items[itemIndex].checked = !this.displayList.items[itemIndex].checked;
         this.emitUpdate();
       }
     },
     // Deletes all selected items
     async deleteSelectedItems() {
       try {
-        // get the list of item ids to delete
-        const itemIdsToDelete = this.selectedItems.map(index => this.list.items[index]._id);
-        // delete items in the backend
-        await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.list._id, itemId)));
-
-        // update the local list
-        this.list.items = this.list.items.filter((item, index) => !this.selectedItems.includes(index));
+        const itemIdsToDelete = this.selectedItems.map(index => this.displayList.items[index]._id);
+        await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.displayList._id, itemId)));
+        this.displayList.items = this.displayList.items.filter((item, index) => !this.selectedItems.includes(index));
         this.selectedItems = [];
-
         this.emitUpdate();
       } catch (error) {
         console.error("Error deleting selected items:", error);
-        // show an alert, or some other user feedback
         alert('Failed to delete selected items.');
-        // re-emit the original list to refresh the view with the original list
         this.emitUpdate();
         this.selectedItems = [];
       }
@@ -195,19 +186,19 @@ export default {
     },
     // Selects or deselects all items
     toggleSelectAll() {
-      if (this.selectedItems.length === this.list.items.length) {
+      if (this.selectedItems.length === this.displayList.items.length) {
         this.selectedItems = [];
       } else {
-        this.selectedItems = this.list.items.map((_, index) => index);
+        this.selectedItems = this.displayList.items.map((_, index) => index);
       }
     },
     // Emits event to notify parent of list changes
     emitUpdate() {
-      this.$emit("update-list", this.list.items);
+      this.$emit("update-list", this.displayList.items);
     },
     // add item to list 
     addItemToList() {
-      this.list.items.push(item);  // update local array with new item
+      this.displayList.items.push(item);  // update local array with new item
       this.emitUpdate(); // notify parent component (ShoppingListView) to update
     }
   },

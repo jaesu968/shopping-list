@@ -93,6 +93,18 @@ watch(() => props.initialItem, (newItem) => {
             notes: newItem.notes || '',
             checked: newItem.checked || false // default to unchecked
          } // use DB field names 
+    } else {
+        // Reset form fields if no initialItem is provided
+        item.value = {
+            name: '',
+            qty: 1,
+            brand: '',
+            category: '',
+            price: 0,
+            weight: 0,
+            notes: '',
+            checked: false
+        }
     }
 }, { immediate: true })
 

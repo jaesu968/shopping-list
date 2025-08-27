@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient, ObjectId, Int32, Double } = require('mongodb');
 const dotenv = require('dotenv');
 const { body, validationResult } = require('express-validator');
 
@@ -13,6 +13,25 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    if (req.body.quantity !== undefined && req.body.qty === undefined) {
+      req.body.qty = req.body.quantity;
+    }
+    if (req.body.picked !== undefined && req.body.checked === undefined) {
+      req.body.checked = req.body.picked;
+    }
+    // coerce possible string booleans coming from form posts
+    if (typeof req.body.checked === 'string') {
+      req.body.checked = req.body.checked === 'true' || req.body.checked === '1';
+    }
+    if (typeof req.body.picked === 'string') {
+      req.body.picked = req.body.picked === 'true' || req.body.picked === '1';
+    }
+  }
+  next();
+});
 
 // ------------------ MongoDB Connection ------------------
 const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shopping-list';
@@ -25,7 +44,6 @@ async function initDB() {
 
     const db = client.db('shopping_app');
 
-    // Create 'items' collection if not exists
     const itemsExists = await db.listCollections({ name: 'items' }).toArray();
     if (!itemsExists.length) {
       await db.createCollection('items', {
@@ -55,7 +73,6 @@ async function initDB() {
       console.log('ℹ️ "items" collection already exists');
     }
 
-    // Create 'lists' collection if not exists
     const listExists = await db.listCollections({ name: 'lists' }).toArray();
     if (!listExists.length) {
       await db.createCollection('lists', {
@@ -85,8 +102,6 @@ async function initDB() {
 initDB();
 
 // ------------------ Middleware ------------------
-
-// Validation rules
 const validateList = [
   body('name').notEmpty().withMessage('List name is required').isString().withMessage('List name must be a string')
 ];
@@ -99,21 +114,29 @@ const validateItem = [
   body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number')
 ];
 
-// Handle validation results
+// new: update validator with all fields optional (so toggle-only updates pass)
+const validateItemUpdate = [
+  body('name').optional().isString().notEmpty().withMessage('name cannot be empty'),
+  body('qty').optional().isInt({ min: 1 }).withMessage('qty must be an integer ≥ 1'),
+  body('checked').optional().isBoolean().withMessage('checked must be boolean'),
+  body('price').optional().isFloat({ min: 0 }).withMessage('price must be a positive number'),
+  body('weight').optional().isFloat({ min: 0 }).withMessage('weight must be a positive number'),
+  body('brand').optional().isString(),
+  body('category').optional().isString(),
+  body('notes').optional().isString()
+];
+
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
   next();
 };
 
-// ------------------ Helper Functions ------------------
 const getDB = () => client.db('shopping_app');
 
 // ------------------ Routes ------------------
 
-// ----------- Lists -----------
-
-// Get all lists
+// Lists
 app.get('/api/lists', async (req, res) => {
   try {
     const lists = await getDB().collection('lists').find({}).toArray();
@@ -123,7 +146,6 @@ app.get('/api/lists', async (req, res) => {
   }
 });
 
-// Get a single list by its ID
 app.get('/api/lists/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,6 +157,8 @@ app.get('/api/lists/:id', async (req, res) => {
       return res.status(404).json({ error: 'List not found' });
     }
     list.items = await getDB().collection('items').find({ listId: new ObjectId(id) }).toArray();
+    // mirror checked -> picked for frontend
+    list.items = list.items.map(it => ({ ...it, picked: it.checked }));
     res.json({ success: true, data: list });
   } catch (err) {
     console.error('GET /api/lists/:id error:', err);
@@ -142,7 +166,6 @@ app.get('/api/lists/:id', async (req, res) => {
   }
 });
 
-// Create a new list
 app.post('/api/lists', validateList, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
@@ -157,7 +180,6 @@ app.post('/api/lists', validateList, handleValidationErrors, async (req, res) =>
   }
 });
 
-// Update list
 app.put('/api/lists/:id', validateList, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
@@ -178,7 +200,6 @@ app.put('/api/lists/:id', validateList, handleValidationErrors, async (req, res)
   }
 });
 
-// Delete list
 app.delete('/api/lists/:listId', async (req, res) => {
   try {
     const { listId } = req.params;
@@ -193,63 +214,97 @@ app.delete('/api/lists/:listId', async (req, res) => {
   }
 });
 
-// ----------- Items -----------
-
-// Get items in a list
+// Items
 app.get('/api/lists/:listId/items', async (req, res) => {
   try {
     const { listId } = req.params;
     if (!ObjectId.isValid(listId)) return res.status(400).json({ success: false, error: 'Invalid list id' });
     const items = await getDB().collection('items').find({ listId: new ObjectId(listId) }).toArray();
-    res.json({ success: true, data: items });
+    const data = items.map(it => ({ ...it, picked: it.checked }));
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to fetch items' });
   }
 });
 
-// Create item
 app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
     const { listId } = req.params;
     if (!ObjectId.isValid(listId)) return res.status(400).json({ success: false, error: 'Invalid list id' });
 
-    const newItem = await db.collection('items').insertOne({
+    const name = String(req.body.name || '').trim();
+    if (!name) return res.status(400).json({ success: false, error: 'name is required' });
+
+    const qtyNum = Math.trunc(Number(req.body.qty ?? 1));
+    if (!Number.isFinite(qtyNum) || qtyNum < 1) {
+      return res.status(400).json({ success: false, error: 'qty must be an integer ≥ 1' });
+    }
+
+    const checked = Boolean(req.body.checked ?? false);
+    const price = (req.body.price !== undefined) ? new Double(Number(req.body.price)) : undefined;
+    const weight = (req.body.weight !== undefined) ? new Double(Number(req.body.weight)) : undefined;
+
+    const doc = {
       listId: new ObjectId(listId),
-      name: req.body.name,
-      qty: req.body.qty || 1,
-      checked: req.body.checked || false,
+      name,
+      qty: new Int32(qtyNum),
+      checked,
       notes: req.body.notes || '',
       brand: req.body.brand || '',
       category: req.body.category || '',
-      price: req.body.price || 0,
-      weight: req.body.weight || 0,
       createdAt: new Date(),
       updatedAt: new Date()
+    };
+    if (price !== undefined) doc.price = price;
+    if (weight !== undefined) doc.weight = weight;
+
+    const newItem = await db.collection('items').insertOne(doc);
+
+    res.status(201).json({
+      success: true,
+      data: { _id: newItem.insertedId, name: doc.name, qty: doc.qty, checked: doc.checked, picked: doc.checked }
     });
-    res.status(201).json({ success: true, data: { _id: newItem.insertedId, ...req.body } });
   } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to create item' });
+    console.error('Create item failed:', err?.errInfo?.details || err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to create item' });
   }
 });
 
-// Update item
-app.put('/api/lists/:listId/items/:itemId', validateItem, handleValidationErrors, async (req, res) => {
+app.put('/api/lists/:listId/items/:itemId', validateItemUpdate, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
     const { listId, itemId } = req.params;
-    if (!ObjectId.isValid(listId) || !ObjectId.isValid(itemId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
+    if (!ObjectId.isValid(listId) || !ObjectId.isValid(itemId)) {
+      return res.status(400).json({ success: false, error: 'Invalid ID' });
+    }
 
-    const { name, qty, checked, brand, category, price, weight, notes } = req.body;
     const updatedFields = { updatedAt: new Date() };
-    if (name) updatedFields.name = name;
-    if (qty) updatedFields.qty = qty;
-    if (typeof checked === 'boolean') updatedFields.checked = checked;
-    if (brand) updatedFields.brand = brand;
-    if (category) updatedFields.category = category;
-    if (price) updatedFields.price = price;
-    if (weight) updatedFields.weight = weight;
-    if (notes) updatedFields.notes = notes;
+
+    if (req.body.name !== undefined) {
+      const nm = String(req.body.name || '').trim();
+      if (!nm) return res.status(400).json({ success: false, error: 'name cannot be empty' });
+      updatedFields.name = nm;
+    }
+
+    if (req.body.qty !== undefined) {
+      const qn = Math.trunc(Number(req.body.qty));
+      if (!Number.isFinite(qn) || qn < 1) {
+        return res.status(400).json({ success: false, error: 'qty must be an integer ≥ 1' });
+      }
+      updatedFields.qty = new Int32(qn);
+    }
+
+    if (req.body.checked !== undefined) {
+      updatedFields.checked = Boolean(req.body.checked);
+    }
+
+    if (req.body.brand !== undefined) updatedFields.brand = req.body.brand;
+    if (req.body.category !== undefined) updatedFields.category = req.body.category;
+    if (req.body.notes !== undefined) updatedFields.notes = req.body.notes;
+
+    if (req.body.price !== undefined) updatedFields.price = new Double(Number(req.body.price));
+    if (req.body.weight !== undefined) updatedFields.weight = new Double(Number(req.body.weight));
 
     const result = await db.collection('items').updateOne(
       { _id: new ObjectId(itemId), listId: new ObjectId(listId) },
@@ -259,13 +314,13 @@ app.put('/api/lists/:listId/items/:itemId', validateItem, handleValidationErrors
     if (result.matchedCount === 0) return res.status(404).json({ success: false, error: 'Item not found' });
 
     const updatedItem = await db.collection('items').findOne({ _id: new ObjectId(itemId) });
-    res.json({ success: true, data: updatedItem });
+    res.json({ success: true, data: { ...updatedItem, picked: updatedItem?.checked } });
   } catch (err) {
+    console.error('Update item failed:', err?.errInfo?.details || err);
     res.status(500).json({ success: false, error: 'Failed to update item' });
   }
 });
 
-// Delete item
 app.delete('/api/lists/:listId/items/:itemId', async (req, res) => {
   try {
     const { listId, itemId } = req.params;

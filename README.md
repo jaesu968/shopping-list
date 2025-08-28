@@ -409,4 +409,8 @@ npm run dev            # or: npm start
 - DELETE /api/lists/:listId/items/:itemId
 - DELETE /api/lists/:listId/items?picked=true (bulk delete picked items)
 
+## Notes for using mongosh (MongoDB Shell)
+- The collections are named lists and items 
+- Example query commands: db.items.find({}) , db.lists.find({}); to find all items or find all lists
+
 ---

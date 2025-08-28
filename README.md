@@ -194,8 +194,8 @@ npm run start
 ---
 
 ## Project Tracker
-- [👥 Phase 1](./src/assets/README%20Assets/projectTracker_phase1.csv) 
-- [👥 Phase 2](./src/assets/README%20Assets/projectTracker_phase2.csv)
+- [📊 Phase 1](./src/assets/README%20Assets/projectTracker_phase1.csv) 
+- [📊 Phase 2](./src/assets/README%20Assets/projectTracker_phase2.csv)
 
 > 💡 Tip: If you want to download and open these in Excel, right-click and choose  
 > **“Save link as…”** or use the **Download raw file** button in GitHub’s viewer.

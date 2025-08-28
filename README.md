@@ -11,7 +11,11 @@ This project is part of a two-phase system:
 
 - **Phase 1:** Vue.js frontend with shopping list creation, editing, and deletion  
 - **Phase 2:** Express.js backend with persistent storage in MongoDB
-
+- **Project Team Personnel:**
+- Kyle Jaesu Akuya
+- Jazmin Eubanks
+- Blake Kachman
+- Leticia Yglecias
 ---
 
 ## Table of Contents

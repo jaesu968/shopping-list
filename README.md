@@ -265,56 +265,102 @@ PORT=3000
 
 ## Using HTTP APIs with Postman (Phase 2)
 
-> **Note:** These endpoints require the Express.js backend to be running at `http://localhost:3000`.
+> The backend runs at `http://localhost:8000/api` (see `src/server1/server.js`).
 
 ### Base URL
 ```
-http://localhost:3000
+http://localhost:8000/api
 ```
 
 ### Lists
-- **GET** `/api/lists` — Get all lists  
-- **POST** `/api/lists` — Create a list  
+- GET `/lists` — Get all lists
+- GET `/lists/:listId` — Get a single list (includes its items)
+- POST `/lists` — Create a list
   ```json
   { "name": "Groceries" }
   ```
-- **GET** `/api/lists/:listId` — Get a single list  
-- **PUT** `/api/lists/:listId` — Update list name  
+- PUT `/lists/:listId` — Rename a list
   ```json
   { "name": "Weekend Groceries" }
   ```
-- **DELETE** `/api/lists/:listId` — Delete a list
+- DELETE `/lists/:listId` — Delete a list
 
 ### Items (within a list)
-- **GET** `/api/lists/:listId/items` — Get items in a list  
-- **POST** `/api/lists/:listId/items` — Add item  
+- GET `/lists/:listId/items` — Get items for a list
+- POST `/lists/:listId/items` — Add an item to a list
   ```json
-  { "name": "Milk", "quantity": 1, "picked": false }
+  {
+    "name": "Milk",
+    "qty": 1,
+    "checked": false,
+    "notes": "",
+    "brand": "",
+    "category": "Dairy",
+    "price": 2.99,
+    "weight": 1.0
+  }
   ```
-- **GET** `/api/lists/:listId/items/:itemId` — Get item by id  
-- **PUT** `/api/lists/:listId/items/:itemId` — Update item  
+- PUT `/lists/:listId/items/:itemId` — Update an item (send only fields you want to change)
   ```json
-  { "name": "Almond Milk", "quantity": 2, "picked": true }
+  { "name": "Almond Milk", "qty": 2, "checked": true }
   ```
-- **DELETE** `/api/lists/:listId/items/:itemId` — Delete item  
-- **DELETE** `/api/lists/:listId/items?picked=true` — Bulk-delete picked items
+- DELETE `/lists/:listId/items/:itemId` — Delete an item
+
+> Notes:
+> - The API also accepts `quantity` and `picked` for compatibility; the server normalizes them to `qty` and `checked`.
+> - `qty` must be an integer ≥ 0; `name` is required.
+
+### Multi‑delete (no single bulk endpoint)
+The UI performs multi‑delete by sending multiple DELETE requests. Here are two ways to do the same with cURL/Postman:
+
+1) cURL (delete multiple `itemId`s for a given `listId`)
+```bash
+LIST_ID="<listId>"
+for ITEM_ID in <itemId1> <itemId2> <itemId3>; do
+  curl -s -X DELETE "http://localhost:8000/api/lists/$LIST_ID/items/$ITEM_ID"
+done
+```
+
+2) Postman Runner (CSV/JSON data file)
+- Create a `DELETE /lists/{{listId}}/items/{{itemId}}` request in a collection.
+- Use the Runner with a data file containing rows of `listId,itemId` to execute deletes for each row.
 
 ### Example cURL usage
 ```bash
 # Create a list
-curl -X POST http://localhost:3000/api/lists   -H "Content-Type: application/json"   -d '{"name":"Groceries"}'
+curl -X POST http://localhost:8000/api/lists \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Groceries"}'
 
 # Get all lists
-curl http://localhost:3000/api/lists
+curl http://localhost:8000/api/lists
 
 # Update a list
-curl -X PUT http://localhost:3000/api/lists/<listId>   -H "Content-Type: application/json"   -d '{"name":"Weekend Groceries"}'
+curl -X PUT http://localhost:8000/api/lists/<listId> \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Weekend Groceries"}'
 
 # Delete a list
-curl -X DELETE http://localhost:3000/api/lists/<listId>
+curl -X DELETE http://localhost:8000/api/lists/<listId>
 
-# Add an item
-curl -X POST http://localhost:3000/api/lists/<listId>/items   -H "Content-Type: application/json"   -d '{"name":"Milk","quantity":1,"picked":false}'
+# Add an item (canonical fields)
+curl -X POST http://localhost:8000/api/lists/<listId>/items \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Milk","qty":1,"checked":false}'
+
+# Add an item (compatibility alias fields)
+curl -X POST http://localhost:8000/api/lists/<listId>/items \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Milk","quantity":1,"picked":false}'
+
+# Update an item
+curl -X PUT http://localhost:8000/api/lists/<listId>/items/<itemId> \
+  -H "Content-Type: application/json" \
+  -d '{"qty":2,"checked":true}'
+
+# Delete multiple items (loop)
+LIST_ID="<listId>" ; for ID in <itemId1> <itemId2>; do \
+  curl -s -X DELETE "http://localhost:8000/api/lists/$LIST_ID/items/$ID" ; done
 ```
 
 ---

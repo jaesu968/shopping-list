@@ -54,7 +54,8 @@ async function initDB() {
             properties: {
               name: { bsonType: 'string', description: 'required string' },
               listId: { bsonType: 'objectId', description: 'shopping list ID' },
-              qty: { bsonType: 'int', minimum: 1 },
+              // qty: { bsonType: 'int', minimum: 1 }, // old rule: disallowed 0
+              qty: { bsonType: 'int', minimum: 0 }, // new rule: allow 0, disallow negatives
               checked: { bsonType: 'bool' },
               notes: { bsonType: 'string' },
               brand: { bsonType: 'string' },
@@ -71,6 +72,47 @@ async function initDB() {
       console.log('🆕 Created "items" with validator + index');
     } else {
       console.log('ℹ️ "items" collection already exists');
+      // Try to relax the existing validator to allow qty >= 0
+      try {
+        // Previous min 1 rule retained for reference:
+        // await db.command({
+        //   collMod: 'items',
+        //   validator: {
+        //     $jsonSchema: {
+        //       bsonType: 'object',
+        //       required: ['name', 'listId'],
+        //       properties: { qty: { bsonType: 'int', minimum: 1 } }
+        //     }
+        //   }
+        // })
+
+        await db.command({
+          collMod: 'items',
+          validator: {
+            $jsonSchema: {
+              bsonType: 'object',
+              required: ['name', 'listId'],
+              properties: {
+                name: { bsonType: 'string', description: 'required string' },
+                listId: { bsonType: 'objectId', description: 'shopping list ID' },
+                qty: { bsonType: 'int', minimum: 0 },
+                checked: { bsonType: 'bool' },
+                notes: { bsonType: 'string' },
+                brand: { bsonType: 'string' },
+                category: { bsonType: 'string' },
+                price: { bsonType: 'double' },
+                weight: { bsonType: 'double' },
+                createdAt: { bsonType: 'date' },
+                updatedAt: { bsonType: 'date' }
+              }
+            }
+          },
+          validationLevel: 'strict'
+        });
+        console.log('♻️ Updated "items" validator to allow qty >= 0');
+      } catch (e) {
+        console.warn('Could not update items validator:', e?.message || e);
+      }
     }
 
     const listExists = await db.listCollections({ name: 'lists' }).toArray();
@@ -106,18 +148,42 @@ const validateList = [
   body('name').notEmpty().withMessage('List name is required').isString().withMessage('List name must be a string')
 ];
 
+// const validateItem = [
+//   body('name').notEmpty().withMessage('Item name is required').isString().withMessage('Item name must be a string'),
+//   body('qty').optional().isInt({ min: 1 }).withMessage('Quantity must be an integer ≥ 1'),
+//   body('checked').optional().isBoolean().withMessage('Checked must be a boolean'),
+//   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+//   body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number')
+// ];
 const validateItem = [
-  body('name').notEmpty().withMessage('Item name is required').isString().withMessage('Item name must be a string'),
-  body('qty').optional().isInt({ min: 1 }).withMessage('Quantity must be an integer ≥ 1'),
+  body('name')
+    .notEmpty()
+    .withMessage('Item name cannot be empty')
+    .isString()
+    .withMessage('Item name must be a string'),
+  body('qty')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Item quantity cannot be less than 0'),
   body('checked').optional().isBoolean().withMessage('Checked must be a boolean'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number')
 ];
 
 // new: update validator with all fields optional (so toggle-only updates pass)
+// const validateItemUpdate = [
+//   body('name').optional().isString().notEmpty().withMessage('name cannot be empty'),
+//   body('qty').optional().isInt({ min: 1 }).withMessage('qty must be an integer ≥ 1'),
+//   body('checked').optional().isBoolean().withMessage('checked must be boolean'),
+//   body('price').optional().isFloat({ min: 0 }).withMessage('price must be a positive number'),
+//   body('weight').optional().isFloat({ min: 0 }).withMessage('weight must be a positive number'),
+//   body('brand').optional().isString(),
+//   body('category').optional().isString(),
+//   body('notes').optional().isString()
+// ];
 const validateItemUpdate = [
-  body('name').optional().isString().notEmpty().withMessage('name cannot be empty'),
-  body('qty').optional().isInt({ min: 1 }).withMessage('qty must be an integer ≥ 1'),
+  body('name').optional().isString().notEmpty().withMessage('Item name cannot be empty'),
+  body('qty').optional().isInt({ min: 0 }).withMessage('Item quantity cannot be less than 0'),
   body('checked').optional().isBoolean().withMessage('checked must be boolean'),
   body('price').optional().isFloat({ min: 0 }).withMessage('price must be a positive number'),
   body('weight').optional().isFloat({ min: 0 }).withMessage('weight must be a positive number'),
@@ -234,11 +300,15 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
     if (!ObjectId.isValid(listId)) return res.status(400).json({ success: false, error: 'Invalid list id' });
 
     const name = String(req.body.name || '').trim();
-    if (!name) return res.status(400).json({ success: false, error: 'name is required' });
+    // if (!name) return res.status(400).json({ success: false, error: 'name is required' });
+    if (!name) return res.status(400).json({ success: false, error: 'Item name cannot be empty' });
 
     const qtyNum = Math.trunc(Number(req.body.qty ?? 1));
-    if (!Number.isFinite(qtyNum) || qtyNum < 1) {
-      return res.status(400).json({ success: false, error: 'qty must be an integer ≥ 1' });
+    // if (!Number.isFinite(qtyNum) || qtyNum < 1) {
+    //   return res.status(400).json({ success: false, error: 'qty must be an integer ≥ 1' });
+    // }
+    if (!Number.isFinite(qtyNum) || qtyNum < 0) {
+      return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
     }
 
     const checked = Boolean(req.body.checked ?? false);
@@ -267,7 +337,15 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
     });
   } catch (err) {
     console.error('Create item failed:', err?.errInfo?.details || err);
-    res.status(500).json({ success: false, error: err.message || 'Failed to create item' });
+    // If Mongo schema validation fails (e.g., existing validator enforces qty >= 1),
+    // surface a friendly 400 with our custom message instead of a generic 500.
+    const msg = String(err?.message || '');
+    const failedValidation = err?.code === 121 || msg.includes('Document failed validation');
+    if (failedValidation) {
+      return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
+    }
+    // res.status(500).json({ success: false, error: err.message || 'Failed to create item' });
+    return res.status(500).json({ success: false, error: 'Failed to create item' });
   }
 });
 

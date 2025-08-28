@@ -48,6 +48,31 @@
       </div>
     </template>
   </Card>
+  <!-- Styled modals mounted inline for this view -->
+  <div v-if="showDeleteConfirm" class="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title">Confirm Deletion</h3>
+      <p class="modal-message">
+        Are you sure you would like to delete the list "{{ lists[pendingDeleteIndex]?.name }}"?
+      </p>
+      <div class="button-row">
+        <button class="cancel-button" @click="onDeleteCancel">Cancel</button>
+        <button class="primary-button" @click="onDeleteConfirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showRenamePrompt" class="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title">Rename List</h3>
+      <label class="label" for="rename-input">New name</label>
+      <input id="rename-input" v-model="renameDraft" placeholder="Enter new list name" @keyup.enter="onRenameConfirm(renameDraft)" />
+      <div class="button-row">
+        <button class="cancel-button" @click="onRenameCancel">Cancel</button>
+        <button class="primary-button" :disabled="!renameDraft || !renameDraft.trim().length" @click="onRenameConfirm(renameDraft)">Save</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -55,6 +80,8 @@
 import ShoppingItem from "@/components/ShoppingItem.vue";
 import Card from "@/components/Card.vue";
 import UpdateItem from "@/views/UpdateItem.vue";
+// import ConfirmModal from "@/components/ConfirmModal.vue"; // commented out: inline modal used instead
+// import PromptModal from "@/components/PromptModal.vue";  // commented out: inline modal used instead
 // import the API service for backend communication
 import api from "@/services/api.js";
 
@@ -63,11 +90,19 @@ export default {
     ShoppingItem,
     Card,
     UpdateItem,
+    // ConfirmModal,
+    // PromptModal,
   },
   data() {
     return {
       lists: [], // Stores all created shopping lists
       selectedList: null, // Index of the currently selected list
+      // Modal state
+      showDeleteConfirm: false,
+      pendingDeleteIndex: null,
+      showRenamePrompt: false,
+      pendingRenameIndex: null,
+      renameDraft: '',
     };
   },
   methods: {
@@ -85,32 +120,58 @@ export default {
 
     // Renames the list at the given index using user input
     async renameList(index) {
-    // get the current list from local state
-    const current = this.lists[index];
-    // ask user for new name
-    const newName = prompt('Enter new list name:', current.name);
+      // Old prompt-based flow retained for easy rollback:
+      // const current = this.lists[index];
+      // const newName = prompt('Enter new list name:', current.name);
+      // if (!newName || newName.trim() === current.name) return;
+      // try {
+      //   const response = await api.updateList(current._id, { name: newName.trim() });
+      //   if (response.data.success) { this.lists[index] = response.data.data; }
+      // } catch (err) { console.error('Error renaming list:', err); alert('Rename failed.'); }
 
-    // if user cancels or enters the same name, do nothing
-      if (!newName || newName.trim() === current.name) return;
+      // New: open styled prompt modal
+      const current = this.lists[index];
+      this.pendingRenameIndex = index;
+      this.renameDraft = current.name;
+      this.showRenamePrompt = true;
+    },
+
+    async onRenameConfirm(newName) {
+      const index = this.pendingRenameIndex;
+      if (index === null) return;
+      const current = this.lists[index];
       try {
-      // call backend API to update list in DB
-       const response = await api.updateList(current._id, { name: newName.trim() });
-       if (response.data.success) {
-         this.lists[index] = response.data.data;
-       }
-    } catch (err) {
+        const response = await api.updateList(current._id, { name: newName.trim() });
+        if (response.data.success) {
+          this.lists[index] = response.data.data;
+        }
+      } catch (err) {
         console.error('Error renaming list:', err);
         alert('Rename failed.');
-    }
+      } finally {
+        this.showRenamePrompt = false;
+        this.pendingRenameIndex = null;
+        this.renameDraft = '';
+      }
+    },
+
+    onRenameCancel() {
+      this.showRenamePrompt = false;
+      this.pendingRenameIndex = null;
+      this.renameDraft = '';
     },
 
     // Deletes the list at the given index after user confirmation
     async deleteList(index) {
+  // New: open styled confirm and bypass native confirm
+  this.pendingDeleteIndex = index;
+  this.showDeleteConfirm = true;
+  return; // keep existing code below for reference
   // get the current list from local state
   const current = this.lists[index];
 
   // confirm with user before deleting
-  if (!confirm(`Delete "${current.name}"?`)) return;
+  // if (!confirm(`Delete "${current.name}"?`)) return;
 
   try {
     // call backend API to delete from DB
@@ -131,6 +192,31 @@ export default {
     console.error('Error deleting list:', err);
     alert('Delete failed.');
   }
+    },
+
+    async onDeleteConfirm() {
+      const index = this.pendingDeleteIndex;
+      if (index === null) return;
+      const current = this.lists[index];
+      try {
+        await api.deleteList(current._id);
+        this.lists.splice(index, 1);
+        if (this.selectedList === index) this.selectedList = null;
+        if (this.selectedList !== null && index < this.selectedList) {
+          this.selectedList -= 1;
+        }
+      } catch (err) {
+        console.error('Error deleting list:', err);
+        alert('Delete failed.');
+      } finally {
+        this.showDeleteConfirm = false;
+        this.pendingDeleteIndex = null;
+      }
+    },
+
+    onDeleteCancel() {
+      this.showDeleteConfirm = false;
+      this.pendingDeleteIndex = null;
     },
 
     // Updates the items of the currently selected list
@@ -209,4 +295,50 @@ export default {
 .delete-btn {
   background-color: #ef4444 !important;
 }
+</style>
+
+<style scoped>
+/* Inline modal styles (matching theme variables) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  min-width: 320px;
+  max-width: 90%;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.modal-title { margin: 0 0 0.75rem 0; }
+.modal-message { margin-bottom: 1rem; }
+.label { display: block; margin-bottom: 0.25rem; }
+input#rename-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #ccc);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  box-sizing: border-box;
+}
+.button-row { display: flex; justify-content: flex-end; gap: 0.75rem; }
+/* .submit-btn and .cancel-btn replaced by project-wide .primary-button and .cancel-button */
+/* .submit-btn { ... } */
+/* .cancel-btn { ... } */
+button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

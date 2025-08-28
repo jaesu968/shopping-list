@@ -52,16 +52,32 @@
     <div v-if="selectedItems.length > 0" class="bulk-actions">
       <button @click="deleteSelectedItems" class="delete-btn">🗑 Delete Selected</button>
     </div>
+
+    <!-- Inline styled confirm for multi-delete -->
+    <div v-if="showBulkConfirm" class="modal-overlay">
+      <div class="modal">
+        <h3 class="modal-title">Confirm Deletion</h3>
+        <p class="modal-message">
+          Are you sure you would like to delete the {{ selectedItems.length }} selected items from
+          "{{ (displayList && displayList.name ? displayList.name : '').trim() || 'this list' }}"?
+        </p>
+        <div class="button-row">
+          <button class="cancel-button" @click="onBulkDeleteCancel">Cancel</button>
+          <button class="primary-button" @click="onBulkDeleteConfirm">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import ItemForm from "@/components/ItemForm.vue";
 import CreateItem from "@/views/CreateItem.vue";
+// import ConfirmModal from "@/components/ConfirmModal.vue"; // commented: inline modal used instead
 import api from "@/services/api.js";
 
 export default {
-  components: { ItemForm , CreateItem },
+  components: { ItemForm , CreateItem /*, ConfirmModal */ },
   props: {
     list: {
       type: Object,
@@ -75,6 +91,7 @@ export default {
       updatingItem: null, // Tracks index of item being edited
       selectedItems: [], // Tracks selected checkboxes
       formKey: 0, // Used to force re-render of the ItemForm
+      showBulkConfirm: false, // Styled modal for multi-delete confirmation
     };
   },
   computed: {
@@ -174,8 +191,46 @@ export default {
         this.emitUpdate();
       }
     },
-    // Deletes all selected items
+    // Deletes all selected items (with confirmation only for multi-item deletes)
     async deleteSelectedItems() {
+      // Old implementation kept for reference:
+      // try {
+      //   const itemIdsToDelete = this.selectedItems.map(index => this.displayList.items[index]._id);
+      //   await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.displayList._id, itemId)));
+      //   this.displayList.items = this.displayList.items.filter((item, index) => !this.selectedItems.includes(index));
+      //   this.selectedItems = [];
+      //   this.emitUpdate();
+      // } catch (error) {
+      //   console.error("Error deleting selected items:", error);
+      //   alert('Failed to delete selected items.');
+      //   this.emitUpdate();
+      //   this.selectedItems = [];
+      // }
+
+      try {
+        const count = this.selectedItems.length;
+        if (count > 1) {
+          // const listName = ((this.displayList && this.displayList.name) ? this.displayList.name : '').trim() || 'this list';
+          // const confirmed = confirm(`Are you sure you would like to delete the ${count} selected items from "${listName}"?`);
+          // if (!confirmed) return;
+          this.showBulkConfirm = true; // open styled modal
+          return;
+        }
+
+        const itemIdsToDelete = this.selectedItems.map(index => this.displayList.items[index]._id);
+        await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.displayList._id, itemId)));
+
+        this.displayList.items = this.displayList.items.filter((item, index) => !this.selectedItems.includes(index));
+        this.selectedItems = [];
+        this.emitUpdate();
+      } catch (error) {
+        console.error("Error deleting selected items:", error);
+        alert('Failed to delete selected items.');
+        this.emitUpdate();
+        this.selectedItems = [];
+      }
+    },
+    async onBulkDeleteConfirm() {
       try {
         const itemIdsToDelete = this.selectedItems.map(index => this.displayList.items[index]._id);
         await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.displayList._id, itemId)));
@@ -186,9 +241,12 @@ export default {
         console.error("Error deleting selected items:", error);
         alert('Failed to delete selected items.');
         this.emitUpdate();
-        this.selectedItems = [];
+      } finally {
+        this.showBulkConfirm = false;
       }
-
+    },
+    onBulkDeleteCancel() {
+      this.showBulkConfirm = false;
     },
     // Selects or deselects all items
     toggleSelectAll() {
@@ -373,6 +431,13 @@ export default {
 
 .bulk-actions button.delete-btn:hover {
   background-color: #dc2626;
+}
+
+/* Reusable layout for modal button row */
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 /* Styling for picked (completed) items */

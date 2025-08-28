@@ -1,14 +1,16 @@
 <template>
-    <form @submit.prevent="submitForm" class="modal-form">
+    <form @submit.prevent="submitForm" class="modal-form" novalidate>
         <!-- Row 1: Item Name and Quantity -->
         <div class="form-row">
             <div class="form-group">
                 <label for="name">Item Name:</label>
-                <input id="name" v-model="item.name" required />
+                <input id="name" v-model="item.name" :class="{ invalid: !!errors.name }" required />
+                <div v-if="errors.name" class="error-msg">Item name cannot be empty</div>
             </div>
             <div class="form-group">
                 <label for="qty">Quantity:</label>
-                <input id="qty" v-model.number="item.qty" required type="number" />
+                <input id="qty" v-model.number="item.qty" :class="{ invalid: !!errors.qty }" required type="number" min="0" />
+                <div v-if="errors.qty" class="error-msg">Item quantity cannot be less than 0</div>
             </div>
         </div>
 
@@ -80,10 +82,13 @@ const item = ref({
     checked: false // default to unchecked
 })
 
+// simple validation state for custom messages
+const errors = ref({ name: '', qty: '' })
+
 // Watch for initialItem prop changes to populate form fields
 watch(() => props.initialItem, (newItem) => {
     if (newItem) {
-        item.value = { 
+        item.value = {
             name: newItem.name || '',
             qty: newItem.qty || newItem.quantity || 1, // use qty or quantity
             brand: newItem.brand || '',
@@ -92,7 +97,7 @@ watch(() => props.initialItem, (newItem) => {
             weight: newItem.weight || 0,
             notes: newItem.notes || '',
             checked: newItem.checked || false // default to unchecked
-         } // use DB field names 
+        } // use DB field names 
     } else {
         // Reset form fields if no initialItem is provided
         item.value = {
@@ -111,7 +116,38 @@ watch(() => props.initialItem, (newItem) => {
 const brands = ref([])
 const categories = ref([])
 
+function validate() {
+    // Reset errors
+    errors.value = { name: '', qty: '' }
+
+    // Name required
+    if (!item.value.name || String(item.value.name).trim().length === 0) {
+        errors.value.name = 'required'
+    }
+
+    // Quantity required; 0 is allowed; negatives are not
+    if (
+        item.value.qty === null ||
+        item.value.qty === undefined ||
+        Number.isNaN(item.value.qty) ||
+        // item.value.qty === 0 || // previously disallowed; now allowed
+        String(item.value.qty).trim?.() === ''
+    ) {
+        errors.value.qty = 'required'
+    } else if (Number(item.value.qty) < 0) {
+        errors.value.qty = 'lt0'
+    }
+
+    return !errors.value.name && !errors.value.qty
+}
+
 function submitForm() {
+    // Trigger custom validation and block submit if invalid
+    if (!validate()) {
+        // If native validation is desired, keep required attributes; otherwise we could call reportValidity.
+        // document.querySelector('#name')?.reportValidity?.();
+        return
+    }
     if (item.value.brand && !brands.value.includes(item.value.brand)) {
         brands.value.push(item.value.brand)
     }
@@ -132,98 +168,132 @@ function submitForm() {
         notes: '',
         checked: false // reset to unchecked after submission
     }
+    // Clear errors after successful submit
+    errors.value = { name: '', qty: '' }
 }
+
+// Clear specific errors as user corrects input
+watch(() => item.value.name, (v) => {
+    if (v && String(v).trim().length > 0) {
+        errors.value.name = ''
+    }
+})
+
+watch(() => item.value.qty, (v) => {
+    if (
+        v !== null &&
+        v !== undefined &&
+        !Number.isNaN(v) &&
+        // v !== 0 && // previously disallowed; now allowed
+        Number(v) >= 0 &&
+        String(v).trim?.() !== ''
+    ) {
+        errors.value.qty = ''
+    }
+})
 </script>
 
 <style scoped>
 .modal-form {
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
 }
 
 /* Labels follow theme colors */
 label {
-  color: var(--text-color);
-  display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 600;
+    color: var(--text-color);
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
 }
 
 /* Inputs, selects, textarea styled to match theme */
 input,
 textarea,
 select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 1rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border, #ccc);
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--color-border, #ccc);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+/* Validation UI */
+.error-msg {
+    color: #d9534f;
+    font-size: 0.875rem;
+    margin-top: -0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.invalid {
+    border-color: #d9534f !important;
 }
 
 textarea {
-  resize: vertical;
-  min-height: 60px;
+    resize: vertical;
+    min-height: 60px;
 }
 
 /* Form row flex for grouping */
 .form-row {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 /* Form group for individual inputs */
 .form-group {
-  flex: 1;
-  min-width: 150px;
-  display: flex;
-  flex-direction: column;
+    flex: 1;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Full width groups like notes */
 .full-width {
-  width: 100%;
+    width: 100%;
 }
 
 /* Button group aligned right */
 .button-group {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
 }
 
 /* Submit button */
 .submit-btn {
-  background-color: var(--btn-bg, #4caf50);
-  color: var(--btn-text, white);
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+    background-color: var(--btn-bg, #4caf50);
+    color: var(--btn-text, white);
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
 /* Cancel button */
 .cancel-btn {
-  background-color: var(--btn-cancel-bg, #e74c3c);
-  color: var(--btn-text, white);
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+    background-color: var(--btn-cancel-bg, #e74c3c);
+    color: var(--btn-text, white);
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
 /* Hover effect for buttons */
 button:hover {
-  opacity: 0.9;
+    opacity: 0.9;
 }
 </style>

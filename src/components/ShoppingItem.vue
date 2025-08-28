@@ -4,7 +4,8 @@
       <button @click="showNameInput = true" class="shared-button">Create New Shopping List</button><br>
     </div>
     <div v-else> <!-- Show input form when creating a new list -->
-      <input v-model="newListName" placeholder="List name..." /><br>
+      <!-- Pressing Enter confirms creation for faster UX -->
+      <input v-model="newListName" placeholder="List name..." @keyup.enter="confirmAdd" /><br>
       <button @click="confirmAdd" class="primary-button">Create</button>
       <button @click="cancelAdd" class="cancel-button">Cancel</button>
     </div>

@@ -1,7 +1,7 @@
 // ------------------ Imports ------------------
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
+// const bodyParser = require('body-parser'); // Express 5 includes built-in parsers; using express.json/urlencoded
 const { MongoClient, ObjectId, Int32, Double } = require('mongodb');
 const dotenv = require('dotenv');
 const { body, validationResult } = require('express-validator');
@@ -9,13 +9,20 @@ const { body, validationResult } = require('express-validator');
 dotenv.config();
 
 // ------------------ Initialize App ------------------
+// Configure the Express app, allow cross-origin requests (dev), and
+// parse JSON/urlencoded bodies for API endpoints.
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Prefer Express built-in body parsers (Express 4.16+ / 5.x)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// Input normalization middleware
+// - Accepts alternative field names from various clients
+// - Coerces string booleans to actual booleans
 app.use((req, _res, next) => {
   if (req.body && typeof req.body === 'object') {
+    // Normalize alternate field names from clients
     if (req.body.quantity !== undefined && req.body.qty === undefined) {
       req.body.qty = req.body.quantity;
     }
@@ -34,6 +41,13 @@ app.use((req, _res, next) => {
 });
 
 // ------------------ MongoDB Connection ------------------
+// Single client for the process with initialization of collections.
+// DB name: shopping_app
+// Collections/Fields (summary):
+//  - lists: { _id, name, createdAt, updatedAt }
+//  - items: { _id, listId(ObjectId), name, qty(Int32>=0), checked(bool),
+//             notes, brand, category, price(Double), weight(Double),
+//             createdAt, updatedAt }
 const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shopping-list';
 const client = new MongoClient(uri);
 
@@ -54,8 +68,7 @@ async function initDB() {
             properties: {
               name: { bsonType: 'string', description: 'required string' },
               listId: { bsonType: 'objectId', description: 'shopping list ID' },
-              // qty: { bsonType: 'int', minimum: 1 }, // old rule: disallowed 0
-              qty: { bsonType: 'int', minimum: 0 }, // new rule: allow 0, disallow negatives
+              qty: { bsonType: 'int', minimum: 0 }, // allow 0, disallow negatives
               checked: { bsonType: 'bool' },
               notes: { bsonType: 'string' },
               brand: { bsonType: 'string' },
@@ -72,20 +85,8 @@ async function initDB() {
       console.log('🆕 Created "items" with validator + index');
     } else {
       console.log('ℹ️ "items" collection already exists');
-      // Try to relax the existing validator to allow qty >= 0
+      // Relax the existing validator to allow qty >= 0
       try {
-        // Previous min 1 rule retained for reference:
-        // await db.command({
-        //   collMod: 'items',
-        //   validator: {
-        //     $jsonSchema: {
-        //       bsonType: 'object',
-        //       required: ['name', 'listId'],
-        //       properties: { qty: { bsonType: 'int', minimum: 1 } }
-        //     }
-        //   }
-        // })
-
         await db.command({
           collMod: 'items',
           validator: {
@@ -148,13 +149,6 @@ const validateList = [
   body('name').notEmpty().withMessage('List name is required').isString().withMessage('List name must be a string')
 ];
 
-// const validateItem = [
-//   body('name').notEmpty().withMessage('Item name is required').isString().withMessage('Item name must be a string'),
-//   body('qty').optional().isInt({ min: 1 }).withMessage('Quantity must be an integer ≥ 1'),
-//   body('checked').optional().isBoolean().withMessage('Checked must be a boolean'),
-//   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-//   body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number')
-// ];
 const validateItem = [
   body('name')
     .notEmpty()
@@ -170,17 +164,7 @@ const validateItem = [
   body('weight').optional().isFloat({ min: 0 }).withMessage('Weight must be a positive number')
 ];
 
-// new: update validator with all fields optional (so toggle-only updates pass)
-// const validateItemUpdate = [
-//   body('name').optional().isString().notEmpty().withMessage('name cannot be empty'),
-//   body('qty').optional().isInt({ min: 1 }).withMessage('qty must be an integer ≥ 1'),
-//   body('checked').optional().isBoolean().withMessage('checked must be boolean'),
-//   body('price').optional().isFloat({ min: 0 }).withMessage('price must be a positive number'),
-//   body('weight').optional().isFloat({ min: 0 }).withMessage('weight must be a positive number'),
-//   body('brand').optional().isString(),
-//   body('category').optional().isString(),
-//   body('notes').optional().isString()
-// ];
+// Update validator with all fields optional (so toggle-only updates pass)
 const validateItemUpdate = [
   body('name').optional().isString().notEmpty().withMessage('Item name cannot be empty'),
   body('qty').optional().isInt({ min: 0 }).withMessage('Item quantity cannot be less than 0'),
@@ -193,8 +177,13 @@ const validateItemUpdate = [
 ];
 
 const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    const list = result.array();
+    const message = list[0]?.msg || 'Invalid request';
+    // Return a unified error shape for easier client handling
+    return res.status(400).json({ success: false, error: message });
+  }
   next();
 };
 
@@ -203,6 +192,12 @@ const getDB = () => client.db('shopping_app');
 // ------------------ Routes ------------------
 
 // Lists
+/**
+ * Get all shopping lists
+ * @route GET /api/lists
+ * @returns {object} 200 - { success: true, data: List[] }
+ * @returns {object} 500 - { success: false, error: string }
+ */
 app.get('/api/lists', async (req, res) => {
   try {
     const lists = await getDB().collection('lists').find({}).toArray();
@@ -212,15 +207,24 @@ app.get('/api/lists', async (req, res) => {
   }
 });
 
+/**
+ * Get a single list and its items
+ * @route GET /api/lists/:id
+ * @param {string} params.id - List ID (Mongo ObjectId)
+ * @returns {object} 200 - { success: true, data: ListWithItems }
+ * @returns {object} 400 - { success: false, error: "Invalid list ID" }
+ * @returns {object} 404 - { success: false, error: "List not found" }
+ * @returns {object} 500 - { success: false, error: string }
+ */
 app.get('/api/lists/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid list ID' });
+      return res.status(400).json({ success: false, error: 'Invalid list ID' });
     }
     const list = await getDB().collection('lists').findOne({ _id: new ObjectId(id) });
     if (!list) {
-      return res.status(404).json({ error: 'List not found' });
+      return res.status(404).json({ success: false, error: 'List not found' });
     }
     list.items = await getDB().collection('items').find({ listId: new ObjectId(id) }).toArray();
     // mirror checked -> picked for frontend
@@ -228,10 +232,19 @@ app.get('/api/lists/:id', async (req, res) => {
     res.json({ success: true, data: list });
   } catch (err) {
     console.error('GET /api/lists/:id error:', err);
-    res.status(500).json({ error: 'Failed to fetch list' });
+    res.status(500).json({ success: false, error: 'Failed to fetch list' });
   }
 });
 
+/**
+ * Create a new shopping list
+ * @route POST /api/lists
+ * @param {object} body - List payload
+ * @param {string} body.name - List name (required)
+ * @returns {object} 201 - { success: true, data: List }
+ * @returns {object} 400 - { success: false, errors: ValidationError[] }
+ * @returns {object} 500 - { success: false, error: string }
+ */
 app.post('/api/lists', validateList, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
@@ -246,6 +259,15 @@ app.post('/api/lists', validateList, handleValidationErrors, async (req, res) =>
   }
 });
 
+/**
+ * Rename a shopping list
+ * @route PUT /api/lists/:id
+ * @param {string} params.id - List ID (Mongo ObjectId)
+ * @param {object} body - Update payload
+ * @param {string} body.name - New list name (required)
+ * @returns {object} 200 - { success: true, data: List }
+ * @returns {object} 400/404/500 - { success: false, error: string }
+ */
 app.put('/api/lists/:id', validateList, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
@@ -266,6 +288,13 @@ app.put('/api/lists/:id', validateList, handleValidationErrors, async (req, res)
   }
 });
 
+/**
+ * Delete a shopping list
+ * @route DELETE /api/lists/:listId
+ * @param {string} params.listId - List ID (Mongo ObjectId)
+ * @returns {object} 200 - { success: true, message: 'List deleted' }
+ * @returns {object} 400/404/500 - { success: false, error: string }
+ */
 app.delete('/api/lists/:listId', async (req, res) => {
   try {
     const { listId } = req.params;
@@ -281,6 +310,13 @@ app.delete('/api/lists/:listId', async (req, res) => {
 });
 
 // Items
+/**
+ * Get all items in a list
+ * @route GET /api/lists/:listId/items
+ * @param {string} params.listId - List ID (Mongo ObjectId)
+ * @returns {object} 200 - { success: true, data: Item[] }
+ * @returns {object} 400/500 - { success: false, error: string }
+ */
 app.get('/api/lists/:listId/items', async (req, res) => {
   try {
     const { listId } = req.params;
@@ -293,6 +329,22 @@ app.get('/api/lists/:listId/items', async (req, res) => {
   }
 });
 
+/**
+ * Create a new item in a list
+ * @route POST /api/lists/:listId/items
+ * @param {string} params.listId - List ID (Mongo ObjectId)
+ * @param {object} body - Item payload
+ * @param {string} body.name - Item name (required)
+ * @param {number} [body.qty=1] - Quantity (>= 0)
+ * @param {boolean} [body.checked=false] - Checked state
+ * @param {string} [body.notes] - Notes
+ * @param {string} [body.brand] - Brand
+ * @param {string} [body.category] - Category
+ * @param {number} [body.price] - Price (>= 0)
+ * @param {number} [body.weight] - Weight (>= 0)
+ * @returns {object} 201 - { success: true, data: Item }
+ * @returns {object} 400/500 - { success: false, error: string }
+ */
 app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
@@ -300,13 +352,9 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
     if (!ObjectId.isValid(listId)) return res.status(400).json({ success: false, error: 'Invalid list id' });
 
     const name = String(req.body.name || '').trim();
-    // if (!name) return res.status(400).json({ success: false, error: 'name is required' });
     if (!name) return res.status(400).json({ success: false, error: 'Item name cannot be empty' });
 
     const qtyNum = Math.trunc(Number(req.body.qty ?? 1));
-    // if (!Number.isFinite(qtyNum) || qtyNum < 1) {
-    //   return res.status(400).json({ success: false, error: 'qty must be an integer ≥ 1' });
-    // }
     if (!Number.isFinite(qtyNum) || qtyNum < 0) {
       return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
     }
@@ -337,18 +385,28 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
     });
   } catch (err) {
     console.error('Create item failed:', err?.errInfo?.details || err);
-    // If Mongo schema validation fails (e.g., existing validator enforces qty >= 1),
-    // surface a friendly 400 with our custom message instead of a generic 500.
+    // If Mongo schema validation fails, surface a friendly 400 instead of a generic 500.
     const msg = String(err?.message || '');
     const failedValidation = err?.code === 121 || msg.includes('Document failed validation');
     if (failedValidation) {
       return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
     }
-    // res.status(500).json({ success: false, error: err.message || 'Failed to create item' });
     return res.status(500).json({ success: false, error: 'Failed to create item' });
   }
 });
 
+/**
+ * Update fields for an item
+ * @route PUT /api/lists/:listId/items/:itemId
+ * @param {string} params.listId - List ID (Mongo ObjectId)
+ * @param {string} params.itemId - Item ID (Mongo ObjectId)
+ * @param {object} body - Any subset of updatable fields
+ * @param {string} [body.name] - Item name (non-empty if present)
+ * @param {number} [body.qty] - Quantity (>= 0)
+ * @param {boolean} [body.checked] - Checked state
+ * @returns {object} 200 - { success: true, data: Item }
+ * @returns {object} 400/404/500 - { success: false, error: string }
+ */
 app.put('/api/lists/:listId/items/:itemId', validateItemUpdate, handleValidationErrors, async (req, res) => {
   try {
     const db = getDB();
@@ -361,14 +419,14 @@ app.put('/api/lists/:listId/items/:itemId', validateItemUpdate, handleValidation
 
     if (req.body.name !== undefined) {
       const nm = String(req.body.name || '').trim();
-      if (!nm) return res.status(400).json({ success: false, error: 'name cannot be empty' });
+      if (!nm) return res.status(400).json({ success: false, error: 'Item name cannot be empty' });
       updatedFields.name = nm;
     }
 
     if (req.body.qty !== undefined) {
       const qn = Math.trunc(Number(req.body.qty));
-      if (!Number.isFinite(qn) || qn < 1) {
-        return res.status(400).json({ success: false, error: 'qty must be an integer ≥ 1' });
+      if (!Number.isFinite(qn) || qn < 0) {
+        return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
       }
       updatedFields.qty = new Int32(qn);
     }
@@ -395,10 +453,24 @@ app.put('/api/lists/:listId/items/:itemId', validateItemUpdate, handleValidation
     res.json({ success: true, data: { ...updatedItem, picked: updatedItem?.checked } });
   } catch (err) {
     console.error('Update item failed:', err?.errInfo?.details || err);
+    // Map Mongo schema validation errors to a user-friendly 400 like create
+    const msg = String(err?.message || '');
+    const failedValidation = err?.code === 121 || msg.includes('Document failed validation');
+    if (failedValidation) {
+      return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
+    }
     res.status(500).json({ success: false, error: 'Failed to update item' });
   }
 });
 
+/**
+ * Delete an item in a list
+ * @route DELETE /api/lists/:listId/items/:itemId
+ * @param {string} params.listId - List ID (Mongo ObjectId)
+ * @param {string} params.itemId - Item ID (Mongo ObjectId)
+ * @returns {object} 200 - { success: true, message: 'Item deleted' }
+ * @returns {object} 400/404/500 - { success: false, error: string }
+ */
 app.delete('/api/lists/:listId/items/:itemId', async (req, res) => {
   try {
     const { listId, itemId } = req.params;
@@ -411,6 +483,14 @@ app.delete('/api/lists/:listId/items/:itemId', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to delete item' });
   }
+});
+
+// Global error handler to ensure consistent error payloads
+app.use((err, req, res, _next) => {
+  console.error('Unhandled error:', err);
+  const status = err.statusCode || 500;
+  const msg = err.message || 'Internal Server Error';
+  res.status(status).json({ success: false, error: msg });
 });
 
 // ------------------ Start Server ------------------

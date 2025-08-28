@@ -48,6 +48,7 @@
       </div>
     </template>
   </Card>
+
   <!-- Styled modals mounted inline for this view -->
   <div v-if="showDeleteConfirm" class="modal-overlay">
     <div class="modal">
@@ -57,11 +58,12 @@
       </p>
       <div class="button-row">
         <button class="cancel-button" @click="onDeleteCancel">Cancel</button>
-        <button class="primary-button" @click="onDeleteConfirm">Delete</button>
+        <button class="delete-btn" @click="onDeleteConfirm">Delete</button>
       </div>
     </div>
   </div>
 
+  <!-- Inline styled prompt for rename (saves on Enter as well) -->
   <div v-if="showRenamePrompt" class="modal-overlay">
     <div class="modal">
       <h3 class="modal-title">Rename List</h3>
@@ -80,18 +82,14 @@
 import ShoppingItem from "@/components/ShoppingItem.vue";
 import Card from "@/components/Card.vue";
 import UpdateItem from "@/views/UpdateItem.vue";
-// import ConfirmModal from "@/components/ConfirmModal.vue"; // commented out: inline modal used instead
-// import PromptModal from "@/components/PromptModal.vue";  // commented out: inline modal used instead
 // import the API service for backend communication
-import api from "@/services/api.js";
+import api, { apiErrorMessage } from "@/services/api.js";
 
 export default {
   components: {
     ShoppingItem,
     Card,
     UpdateItem,
-    // ConfirmModal,
-    // PromptModal,
   },
   data() {
     return {
@@ -115,21 +113,13 @@ export default {
         }
       } catch (error) {
         console.error('Error creating list: ', error); // Log any errors that occur during the API call
+        alert(`Failed to create list: ${apiErrorMessage(error, 'Create failed')}`);
       }
     },
 
-    // Renames the list at the given index using user input
+    // Renames the list at the given index using a styled modal prompt
     async renameList(index) {
-      // Old prompt-based flow retained for easy rollback:
-      // const current = this.lists[index];
-      // const newName = prompt('Enter new list name:', current.name);
-      // if (!newName || newName.trim() === current.name) return;
-      // try {
-      //   const response = await api.updateList(current._id, { name: newName.trim() });
-      //   if (response.data.success) { this.lists[index] = response.data.data; }
-      // } catch (err) { console.error('Error renaming list:', err); alert('Rename failed.'); }
-
-      // New: open styled prompt modal
+      // Open styled prompt modal
       const current = this.lists[index];
       this.pendingRenameIndex = index;
       this.renameDraft = current.name;
@@ -147,7 +137,8 @@ export default {
         }
       } catch (err) {
         console.error('Error renaming list:', err);
-        alert('Rename failed.');
+        // alert('Rename failed.');
+        alert(`Rename failed: ${apiErrorMessage(err, 'Rename failed')}`);
       } finally {
         this.showRenamePrompt = false;
         this.pendingRenameIndex = null;
@@ -161,37 +152,11 @@ export default {
       this.renameDraft = '';
     },
 
-    // Deletes the list at the given index after user confirmation
+    // Deletes the list at the given index (opens styled confirm first)
     async deleteList(index) {
-  // New: open styled confirm and bypass native confirm
-  this.pendingDeleteIndex = index;
-  this.showDeleteConfirm = true;
-  return; // keep existing code below for reference
-  // get the current list from local state
-  const current = this.lists[index];
-
-  // confirm with user before deleting
-  // if (!confirm(`Delete "${current.name}"?`)) return;
-
-  try {
-    // call backend API to delete from DB
-    await api.deleteList(current._id);
-
-    // remove from local state so UI updates
-    this.lists.splice(index, 1);
-
-    // reset selectedList if deleted one was selected
-    if (this.selectedList === index) this.selectedList = null;
-
-    // if you deleted an earlier index, adjust selection index
-    if (this.selectedList !== null && index < this.selectedList) {
-      this.selectedList -= 1;
-    }
-
-  } catch (err) {
-    console.error('Error deleting list:', err);
-    alert('Delete failed.');
-  }
+      this.pendingDeleteIndex = index;
+      this.showDeleteConfirm = true;
+      return;
     },
 
     async onDeleteConfirm() {
@@ -207,7 +172,8 @@ export default {
         }
       } catch (err) {
         console.error('Error deleting list:', err);
-        alert('Delete failed.');
+        // alert('Delete failed.');
+        alert(`Delete failed: ${apiErrorMessage(err, 'Delete failed')}`);
       } finally {
         this.showDeleteConfirm = false;
         this.pendingDeleteIndex = null;
@@ -218,6 +184,18 @@ export default {
       this.showDeleteConfirm = false;
       this.pendingDeleteIndex = null;
     },
+    // Toast helpers (duplicate block commented out below to avoid duplication)
+    // showToast(text, type = 'error', duration = 3500) {
+    //   const id = ++this.toastCounter;
+    //   this.toasts.push({ id, text, type });
+    //   setTimeout(() => this.removeToast(id), duration);
+    // },
+    // notifyError(text) {
+    //   this.showToast(text, 'error');
+    // },
+    // removeToast(id) {
+    //   this.toasts = this.toasts.filter(t => t.id !== id);
+    // },
 
     // Updates the items of the currently selected list
       updateListItems(updatedItems) {
@@ -240,8 +218,10 @@ export default {
         }
       } catch (error) { // Log any errors that occur during the API call
         console.error('Error fetching lists: ', error); 
+        alert(`Failed to fetch lists: ${apiErrorMessage(error, 'Fetch failed')}`);
       }
     },
+    // Toast helpers removed
     // select a list to view its items 
     async selectList(index) {
       this.selectedList = this.selectedList === index ? null : index;
@@ -254,13 +234,19 @@ export default {
           console.error('Selected list does not have a valid ID:', this.lists[this.selectedList]);
           return;
         }
-        const response = await api.getListItems(listId);
-        if (this.lists[this.selectedList] && response.data.success) {
-          this.lists[this.selectedList].items = response.data.data; // Update the items of the selected list
+        try {
+          const response = await api.getListItems(listId);
+          if (this.lists[this.selectedList] && response.data.success) {
+            this.lists[this.selectedList].items = response.data.data; // Update the items of the selected list
+          }
+        } catch (e) {
+          console.error('Error fetching items: ', e);
+          alert(`Failed to fetch items: ${apiErrorMessage(e, 'Fetch items failed')}`);
         }
       }
     }
   },
+  
     // Lifecycle hook to fetch existing lists from the backend when the component is created
   async mounted() {
     await this.fetchLists(); 
@@ -341,4 +327,6 @@ input#rename-input {
 /* .submit-btn { ... } */
 /* .cancel-btn { ... } */
 button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Removed toast styles */
 </style>

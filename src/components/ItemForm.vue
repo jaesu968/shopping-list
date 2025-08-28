@@ -1,4 +1,5 @@
 <template>
+    <!-- novalidate disables native browser messages so we can show custom ones -->
     <form @submit.prevent="submitForm" class="modal-form" novalidate>
         <!-- Row 1: Item Name and Quantity -->
         <div class="form-row">
@@ -9,6 +10,7 @@
             </div>
             <div class="form-group">
                 <label for="qty">Quantity:</label>
+                <!-- min=0 aligns native semantics with our custom validation rule -->
                 <input id="qty" v-model.number="item.qty" :class="{ invalid: !!errors.qty }" required type="number" min="0" />
                 <div v-if="errors.qty" class="error-msg">Item quantity cannot be less than 0</div>
             </div>
@@ -82,7 +84,7 @@ const item = ref({
     checked: false // default to unchecked
 })
 
-// simple validation state for custom messages
+// Simple validation state for custom messages (name, qty)
 const errors = ref({ name: '', qty: '' })
 
 // Watch for initialItem prop changes to populate form fields
@@ -116,8 +118,9 @@ watch(() => props.initialItem, (newItem) => {
 const brands = ref([])
 const categories = ref([])
 
+// Validate required fields and set friendly message flags
 function validate() {
-    // Reset errors
+    // Reset errors each pass
     errors.value = { name: '', qty: '' }
 
     // Name required
@@ -130,7 +133,6 @@ function validate() {
         item.value.qty === null ||
         item.value.qty === undefined ||
         Number.isNaN(item.value.qty) ||
-        // item.value.qty === 0 || // previously disallowed; now allowed
         String(item.value.qty).trim?.() === ''
     ) {
         errors.value.qty = 'required'
@@ -141,11 +143,10 @@ function validate() {
     return !errors.value.name && !errors.value.qty
 }
 
+// Form submit handler (blocks until validation passes)
 function submitForm() {
     // Trigger custom validation and block submit if invalid
     if (!validate()) {
-        // If native validation is desired, keep required attributes; otherwise we could call reportValidity.
-        // document.querySelector('#name')?.reportValidity?.();
         return
     }
     if (item.value.brand && !brands.value.includes(item.value.brand)) {
@@ -172,7 +173,7 @@ function submitForm() {
     errors.value = { name: '', qty: '' }
 }
 
-// Clear specific errors as user corrects input
+// Clear specific errors as user corrects input (live feedback)
 watch(() => item.value.name, (v) => {
     if (v && String(v).trim().length > 0) {
         errors.value.name = ''
@@ -184,7 +185,6 @@ watch(() => item.value.qty, (v) => {
         v !== null &&
         v !== undefined &&
         !Number.isNaN(v) &&
-        // v !== 0 && // previously disallowed; now allowed
         Number(v) >= 0 &&
         String(v).trim?.() !== ''
     ) {
@@ -283,13 +283,18 @@ textarea {
 
 /* Cancel button */
 .cancel-btn {
-    background-color: var(--btn-cancel-bg, #e74c3c);
+    /* Swap: cancel uses the app's blue accent */
+    background-color: #3b82f6;
     color: var(--btn-text, white);
     border: none;
     padding: 0.5rem 1rem;
     cursor: pointer;
     border-radius: 4px;
     transition: background-color 0.3s ease;
+}
+
+.cancel-btn:hover {
+    background-color: #2563eb;
 }
 
 /* Hover effect for buttons */

@@ -63,10 +63,11 @@
         </p>
         <div class="button-row">
           <button class="cancel-button" @click="onBulkDeleteCancel">Cancel</button>
-          <button class="primary-button" @click="onBulkDeleteConfirm">Delete</button>
+          <button class="delete-btn" @click="onBulkDeleteConfirm">Delete</button>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -74,7 +75,7 @@
 import ItemForm from "@/components/ItemForm.vue";
 import CreateItem from "@/views/CreateItem.vue";
 // import ConfirmModal from "@/components/ConfirmModal.vue"; // commented: inline modal used instead
-import api from "@/services/api.js";
+import api, { apiErrorMessage } from "@/services/api.js";
 
 export default {
   components: { ItemForm , CreateItem /*, ConfirmModal */ },
@@ -92,7 +93,7 @@ export default {
       selectedItems: [], // Tracks selected checkboxes
       formKey: 0, // Used to force re-render of the ItemForm
       showBulkConfirm: false, // Styled modal for multi-delete confirmation
-    };
+      };
   },
   computed: {
     displayList() {
@@ -155,6 +156,7 @@ export default {
         this.emitUpdate();
       } catch (error) {
         console.error("Error saving item:", error);
+        alert(`Failed to save item: ${apiErrorMessage(error, 'Save failed')}`);
       }
     },
     // Sets modal to edit mode for an item
@@ -173,7 +175,8 @@ export default {
         this.selectedItems = this.selectedItems.map(i => (i > index ? i - 1 : i));
       } catch (error) {
         console.error("Error deleting item:", error);
-        alert('Failed to delete item.');
+        // alert('Failed to delete item.');
+        alert(`Failed to delete item: ${apiErrorMessage(error, 'Delete failed')}`);
       }
     },
     // Updates item status
@@ -189,31 +192,16 @@ export default {
         // Revert on error
         this.displayList.items[itemIndex].checked = !this.displayList.items[itemIndex].checked;
         this.emitUpdate();
+        alert(`Failed to update item: ${apiErrorMessage(error, 'Update failed')}`);
       }
     },
-    // Deletes all selected items (with confirmation only for multi-item deletes)
+    // Deletes all selected items (shows confirm modal only for multi-item deletes)
     async deleteSelectedItems() {
-      // Old implementation kept for reference:
-      // try {
-      //   const itemIdsToDelete = this.selectedItems.map(index => this.displayList.items[index]._id);
-      //   await Promise.all(itemIdsToDelete.map(itemId => api.deleteItem(this.displayList._id, itemId)));
-      //   this.displayList.items = this.displayList.items.filter((item, index) => !this.selectedItems.includes(index));
-      //   this.selectedItems = [];
-      //   this.emitUpdate();
-      // } catch (error) {
-      //   console.error("Error deleting selected items:", error);
-      //   alert('Failed to delete selected items.');
-      //   this.emitUpdate();
-      //   this.selectedItems = [];
-      // }
-
       try {
         const count = this.selectedItems.length;
         if (count > 1) {
-          // const listName = ((this.displayList && this.displayList.name) ? this.displayList.name : '').trim() || 'this list';
-          // const confirmed = confirm(`Are you sure you would like to delete the ${count} selected items from "${listName}"?`);
-          // if (!confirmed) return;
-          this.showBulkConfirm = true; // open styled modal
+          // Open styled confirm modal for multi-delete
+          this.showBulkConfirm = true;
           return;
         }
 
@@ -225,10 +213,23 @@ export default {
         this.emitUpdate();
       } catch (error) {
         console.error("Error deleting selected items:", error);
-        alert('Failed to delete selected items.');
+        // alert('Failed to delete selected items.');
+        alert(`Failed to delete selected items: ${apiErrorMessage(error, 'Bulk delete failed')}`);
         this.emitUpdate();
         this.selectedItems = [];
       }
+    },
+    // Toast helpers
+    showToast(text, type = 'error', duration = 3500) {
+      const id = ++this.toastCounter;
+      this.toasts.push({ id, text, type });
+      setTimeout(() => this.removeToast(id), duration);
+    },
+    notifyError(text) {
+      this.showToast(text, 'error');
+    },
+    removeToast(id) {
+      this.toasts = this.toasts.filter(t => t.id !== id);
     },
     async onBulkDeleteConfirm() {
       try {
@@ -239,7 +240,8 @@ export default {
         this.emitUpdate();
       } catch (error) {
         console.error("Error deleting selected items:", error);
-        alert('Failed to delete selected items.');
+        // alert('Failed to delete selected items.');
+        alert(`Failed to delete selected items: ${apiErrorMessage(error, 'Bulk delete failed')}`);
         this.emitUpdate();
       } finally {
         this.showBulkConfirm = false;
@@ -433,6 +435,20 @@ export default {
   background-color: #dc2626;
 }
 
+/* Generic delete button styling (for modal actions, etc.) */
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
 /* Reusable layout for modal button row */
 .button-row {
   display: flex;
@@ -452,6 +468,8 @@ export default {
 .items-table th {
   vertical-align: middle;
 }
+
+/* Removed toast styles */
 
 /* Inline alignment for checkbox and buttons */
 .items-table td input[type="checkbox"].item-checkbox {

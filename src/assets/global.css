@@ -275,7 +275,8 @@ input[type="checkbox"] {
 
 /* Red cancel button */
 .cancel-button {
-  background-color: #ef4444;
+  /* Swap: cancel is blue to contrast red delete */
+  background-color: #3b82f6; /* blue */
   border: none;
   padding: 0.5rem 1rem;
   font-size: 1rem;
@@ -286,7 +287,23 @@ input[type="checkbox"] {
 }
 
 .cancel-button:hover {
-  background-color: #dc2626;
+  background-color: #2563eb; /* darker blue */
+}
+
+/* Global delete button style to match cancel shape/size */
+.delete-btn {
+  background-color: #ef4444; /* red */
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626; /* darker red */
 }
 
 /* Spacing between buttons in button groups */

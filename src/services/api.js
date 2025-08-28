@@ -1,33 +1,54 @@
-/* this file provides an API service for the shopping list application
-it uses axios to make HTTP requests to the backend server
-// the API endpoints are defined for managing shopping lists and items
-// the base URL is set to the backend server's address
-// this allows the frontend to interact with the backend easily
-the API service can be imported and used in Vue components or other services
-*/
-// src/services/api.js
+// Centralized API service for the shopping list application.
+// Uses a configured axios instance + response interceptor to normalize errors.
 import axios from 'axios'
 
 const API_BASE_URL = 'http://localhost:8000/api'
 
+// Axios instance with a base URL and timeout for all requests
+const http = axios.create({ baseURL: API_BASE_URL, timeout: 10000 })
+
+http.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Normalize error object for consistent handling in UI
+    const resp = error?.response
+    const msg = resp?.data?.error || resp?.data?.message || error?.message || 'Request failed'
+    error.normalizedMessage = msg
+    return Promise.reject(error)
+  }
+)
+
+// Helper to extract the most meaningful error message for end users
+export const apiErrorMessage = (err, fallback = 'Request failed') => {
+  const data = err?.response?.data
+  const validationMsg = Array.isArray(data?.errors) && data.errors.length ? (data.errors[0]?.msg || data.errors[0]) : null
+  return (
+    err?.normalizedMessage ||
+    data?.error ||
+    validationMsg ||
+    err?.message ||
+    fallback
+  )
+}
+
 const api = {
   // Shopping Lists
-  getAllLists: () => axios.get(`${API_BASE_URL}/lists`),
-  getList: (id) => axios.get(`${API_BASE_URL}/lists/${id}`),
-  createList: (listData) => axios.post(`${API_BASE_URL}/lists`, listData),
-  //Adding Update and Delete functionality
-  updateList: (id, listData) => axios.put(`${API_BASE_URL}/lists/${id}`, listData),
-  deleteList: (id) => axios.delete(`${API_BASE_URL}/lists/${id}`),
+  getAllLists: () => http.get(`/lists`),
+  getList: (id) => http.get(`/lists/${id}`),
+  createList: (listData) => http.post(`/lists`, listData),
+  // Update and delete list
+  updateList: (id, listData) => http.put(`/lists/${id}`, listData),
+  deleteList: (id) => http.delete(`/lists/${id}`),
 
 
   // Items
-  getListItems: (listId) => axios.get(`${API_BASE_URL}/lists/${listId}/items`),
-  createItem: (listId, itemData) => axios.post(`${API_BASE_URL}/lists/${listId}/items`, itemData),
-  //Adding update and delete
+  getListItems: (listId) => http.get(`/lists/${listId}/items`),
+  createItem: (listId, itemData) => http.post(`/lists/${listId}/items`, itemData),
+  // Update and delete item
   updateItem: (listId, itemId, itemData) =>
-    axios.put(`${API_BASE_URL}/lists/${listId}/items/${itemId}`, itemData),
+    http.put(`/lists/${listId}/items/${itemId}`, itemData),
   deleteItem: (listId, itemId) =>
-    axios.delete(`${API_BASE_URL}/lists/${listId}/items/${itemId}`)
+    http.delete(`/lists/${listId}/items/${itemId}`)
 }
 
 export default api

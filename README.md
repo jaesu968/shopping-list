@@ -25,6 +25,7 @@ This project is part of a two-phase system:
 - [Challenges Faced](#challenges-faced)
 - [Requirements Not Implemented](#requirements-not-implemented)
 - [Known Bugs](#known-bugs)
+- [Project Tracker](#project-tracker)
 - [Procedures for Running the Application](#procedures-for-running-the-application)
 - [System Versions](#system-versions)
 - [Environment Files](#environment-files)
@@ -162,6 +163,8 @@ npm run build
 - **State management:** Local component state now; larger scale will require Pinia/Vuex  
 - **Validation:** Only non-empty names validated in Phase 1  
 - **Frontend/backend alignment:** Ensuring schemas match frontend fields
+- **Data type consistency:** Data types match user input via API calls
+- **Variable consitency:** Consistent naming of variables between frontend and backend
 
 **Notes from backend work:**
 - Deprecated MongoDB driver options (`useNewUrlParser`, `useUnifiedTopology`) removed  
@@ -185,8 +188,17 @@ npm run start
 ---
 
 ## Known Bugs
-- Theme toggle resets on page reload  
+- MongoDB may occasionally disconnect and show incorrect preview information in the frontend UI. Page refreshes correct this. Any data entered during this interruption continues to persist.
 - Some routing paths untested due to limited router setup (404 page not verified)
+
+---
+
+## Project Tracker
+- [👥 Phase 1](./src/assets/README%20Assets/projectTracker_phase1.csv) 
+- [👥 Phase 2](./src/assets/README%20Assets/projectTracker_phase2.csv)
+
+> 💡 Tip: If you want to download and open these in Excel, right-click and choose  
+> **“Save link as…”** or use the **Download raw file** button in GitHub’s viewer.
 
 ---
 

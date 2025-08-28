@@ -1,0 +1,14 @@
+Status,Task,Description,Assigned To,Meeting Time
+DONE,Project Setup,"Create shared Git repo, add server/ folder, initialize Node project (npm init -y)",All,
+DONE,Database Choice & Schema Design,Decide DB (MongoDB) and design schema for shopping list,All,
+DONE,API Endpoint Planning,"Decide routes & URL structure (/api/lists, /api/lists/:id)",All,
+DONE,Express Server Setup,"Create server.js, configure middleware (express, cors, body-parser)",Kyle,
+DONE,Database Connection,"Connect to MongoDB, set up schema/collection",Leticia,meeting 8/20 at 6:30 pm
+DONE,CRUD Routes,"Implement Create, Read, Update, Delete in routes/shoppingLists.js","Kyle, Leticia",
+DONE,Validation Layer,Implement request body validation for create/update,Jazmin,
+DONE,API Manual Testing,Use Postman to test all endpoints,Blake,
+DONE,Error Handling Tests,Test with bad requests to ensure correct error messages,"Jazmin, Blake",meeting 8/27 at 6 PM
+DONE,Unit Tests,Write tests for each endpoint (optional if not required),Blake,
+DONE,README Documentation,"Explain setup, endpoints, known bugs, challenges","Blake, All",
+To Do,Final Merge & Review,"Merge all branches, resolve conflicts, team test",All,
+To Do,Submission Package,"Zip files, ensure README.md and server/ included",All,

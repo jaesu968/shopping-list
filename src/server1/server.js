@@ -389,7 +389,9 @@ app.post('/api/lists/:listId/items', validateItem, handleValidationErrors, async
     const msg = String(err?.message || '');
     const failedValidation = err?.code === 121 || msg.includes('Document failed validation');
     if (failedValidation) {
-      return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
+      const details = err?.errInfo?.details?.schemaRulesNotSatisfied;
+      console.error('Schema validation failed:', JSON.stringify(details, null, 2));
+      return res.status(400).json({ success: false, error: 'Item failed schema validation' });
     }
     return res.status(500).json({ success: false, error: 'Failed to create item' });
   }
@@ -457,7 +459,9 @@ app.put('/api/lists/:listId/items/:itemId', validateItemUpdate, handleValidation
     const msg = String(err?.message || '');
     const failedValidation = err?.code === 121 || msg.includes('Document failed validation');
     if (failedValidation) {
-      return res.status(400).json({ success: false, error: 'Item quantity cannot be less than 0' });
+      const details = err?.errInfo?.details?.schemaRulesNotSatisfied;
+      console.error('Schema validation failed:', JSON.stringify(details, null, 2));
+      return res.status(400).json({ success: false, error: 'Item failed schema validation' });
     }
     res.status(500).json({ success: false, error: 'Failed to update item' });
   }
